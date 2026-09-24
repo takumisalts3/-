@@ -1,0 +1,2012 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>匠のサンプルゲーム1: Arena Protocol</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#050711;color:#eaf7ff;font-family:system-ui,"Yu Gothic",sans-serif;overflow:hidden}
+body{display:grid;place-items:center;min-height:100vh;touch-action:none;overscroll-behavior:none}
+#wrap{position:relative;width:min(100vw,1280px);aspect-ratio:16/9;border:1px solid #263b61;background:#02040a;box-shadow:0 0 45px #0bf3}
+canvas{width:100%;height:100%;display:block}
+#hud{position:absolute;inset:0;pointer-events:none}
+.top{display:flex;justify-content:space-between;padding:18px 22px;font-weight:800;text-shadow:0 2px 5px #000}
+.bar{width:260px;height:12px;border:1px solid #7ca0bd;background:#08101c;margin-top:6px}.fill{height:100%;background:linear-gradient(90deg,#21e6b7,#b9ffdf)}.shieldbar{background:#061427;border-color:#3b9cff}.shieldfill{display:block;height:100%;width:0;background:#45c9ff;box-shadow:0 0 12px #36bfff;transition:width .08s linear}
+.powerMeters{position:static;grid-column:1/-1;width:min(100%,720px);margin:0 auto 6px;font-size:11px;font-weight:800;text-shadow:0 2px 5px #000;display:grid;grid-template-columns:repeat(5,minmax(90px,1fr));gap:7px 10px}.powerMeters .pm{margin-top:0}.powerMeters .pbar{width:100%}@media(max-width:700px){.powerMeters{grid-template-columns:repeat(3,minmax(80px,1fr));font-size:10px}}.pm{margin-top:6px}.pmrow{display:flex;justify-content:space-between}.pbar{height:7px;border:1px solid #5d7895;background:#07101b;margin-top:2px}.pfill{height:100%;background:linear-gradient(90deg,#45c9ff,#d7ffff);transition:width .1s linear}#bossbar{position:absolute;left:25%;right:25%;top:55px;display:none;text-align:center}.bossfill{height:10px;background:#ff477e}
+#msg{position:absolute;top:15%;left:0;right:0;text-align:center;font-size:34px;font-weight:900;letter-spacing:5px;text-shadow:0 0 20px #39f}
+#help{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:12px;color:#9bb1ca}
+#overlay{position:absolute;inset:0;background:#030714e8;display:grid;place-items:center;pointer-events:auto}
+.panel{width:min(720px,90%);text-align:center;padding:25px}.logo{font-size:52px;font-weight:1000;letter-spacing:7px;color:#eaffff;text-shadow:0 0 18px #00d9ff,0 0 45px #8b5cf6}.tag{color:#8ba7c3;letter-spacing:3px}
+button{font:inherit;color:white;background:#11213b;border:1px solid #57c9ff;border-radius:6px;padding:12px 22px;margin:8px;cursor:pointer}button:hover{background:#17345b}
+#cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}.card{width:190px;min-height:150px;text-align:left}.card b{display:block;color:#71e7ff;margin-bottom:8px}.small{font-size:13px;color:#9eb2c9}
+
+#touchUI{position:relative;width:min(100vw,1280px);height:300px;display:block;pointer-events:none;z-index:5;background:linear-gradient(#07101b,#02060c);border-top:1px solid #4fcfff55}
+.stickZone{position:absolute;bottom:8px;width:34%;height:205px;pointer-events:auto;touch-action:none}
+#moveZone{left:1%}#aimZone{right:1%}
+.stickZone .ring{position:absolute;width:118px;height:118px;border:2px solid #9ee8ff88;border-radius:50%;background:#0a213355;left:50%;top:48%;transform:translate(-50%,-50%)}
+.stickZone .knob{position:absolute;width:54px;height:54px;border-radius:50%;background:#a9f4ff99;border:2px solid #eaffff;left:50%;top:48%;transform:translate(-50%,-50%);box-shadow:0 0 20px #35dfff}
+.stickZone span{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:11px;color:#c7eaffaa}
+#dashBtn{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:78px;height:78px;border-radius:50%;pointer-events:auto;touch-action:none;background:#522e86aa;border:2px solid #d7b4ff;color:white;font-weight:900}
+#pauseBtn{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:62px;height:48px;border-radius:14px;pointer-events:auto;touch-action:none;background:#10253dcc;border:2px solid #a8eaff;color:white;font-size:22px;font-weight:900}
+@media (pointer:coarse),(max-width:900px){#touchUI{display:block}#help{font-size:10px;bottom:3px}.top{padding:8px 10px;font-size:12px}.bar{width:150px}.logo{font-size:36px}}
+
+#soundCtl{position:absolute;left:50%;top:78px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;pointer-events:auto;color:#fff;font-size:16px}
+#volume{width:115px;accent-color:#8eefff}
+@media (max-width:500px){#touchUI{height:210px}.stickZone{height:190px}.stickZone .ring{width:105px;height:105px}.stickZone .knob{width:50px;height:50px}#dashBtn{width:68px;height:68px}}
+#controlStatus{height:54px;display:grid;grid-template-columns:220px 220px 1fr;gap:12px;align-items:center;padding:6px 14px;box-sizing:border-box;color:#e9fbff;font-size:11px;font-weight:800}.controlVital{min-width:0}.controlBar{width:100%;height:8px;margin-top:2px}#controlStatus #stats{text-align:right;white-space:nowrap}.powerMeters{box-sizing:border-box;padding:0 14px}.stickZone{top:108px!important;bottom:auto!important;height:180px!important}#dashBtn{bottom:18px!important}#pauseBtn{top:128px!important}#soundCtl{top:186px!important}@media(max-width:700px){#controlStatus{grid-template-columns:1fr 1fr;height:74px}#controlStatus #stats{grid-column:1/-1;text-align:center}.stickZone{top:130px!important;height:160px!important}#pauseBtn{top:145px!important}#soundCtl{top:198px!important}}#boardHelp{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:10px;color:#9bb1ca;pointer-events:none}
+/* V23 compact control board: keep every control inside the visible panel */
+#touchUI{height:220px!important;overflow:hidden!important}
+#controlStatus{height:46px!important;padding:4px 12px!important}
+.powerMeters{height:43px!important;padding:0 12px!important;gap:4px 8px!important}
+.powerMeters .pm{min-width:0!important}
+.powerMeters .pmrow{font-size:10px!important}
+.powerMeters .pbar{height:5px!important;margin-top:1px!important}
+.stickZone{top:88px!important;height:124px!important;width:31%!important}
+.stickZone .ring{width:96px!important;height:96px!important;top:45%!important}
+.stickZone .knob{width:44px!important;height:44px!important;top:45%!important}
+.stickZone span{bottom:0!important}
+#dashBtn{top:135px!important;bottom:auto!important;width:64px!important;height:64px!important}
+#pauseBtn{top:92px!important;width:50px!important;height:38px!important;font-size:18px!important}
+#soundCtl{top:177px!important;font-size:13px!important}
+#volume{width:90px!important}
+#boardHelp{display:none!important}
+@media(max-width:700px){
+ #touchUI{height:220px!important}
+ #controlStatus{height:54px!important;grid-template-columns:1fr 1fr!important}
+ #controlStatus #stats{grid-column:1/-1!important;text-align:center!important;font-size:10px!important}
+ .powerMeters{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:42px!important;padding:0 5px!important;gap:3px!important}
+ .powerMeters .pmrow{font-size:8px!important}
+ .stickZone{top:98px!important;height:116px!important}
+ #pauseBtn{top:101px!important}
+ #dashBtn{top:142px!important}
+ #soundCtl{top:183px!important}
+}
+
+/* V27 plasma-core bomb button */
+#dashBtn{
+ width:78px!important;height:78px!important;border-radius:22px!important;
+ background:radial-gradient(circle at 50% 42%,#f2ffe9 0 7%,#7dff57 8% 18%,#1c9b42 19% 37%,#071a18 38% 64%,#18314a 65% 100%)!important;
+ border:2px solid #9dff82!important;color:#efffe9!important;
+ font-size:0!important;letter-spacing:.5px!important;
+ box-shadow:0 0 10px #6cff58,0 0 25px #31ff5966,inset 0 0 18px #8aff6b88!important;
+ clip-path:polygon(20% 0,80% 0,100% 20%,100% 80%,80% 100%,20% 100%,0 80%,0 20%)!important;
+}
+#dashBtn::before{content:"✦";font-size:31px;line-height:1;display:block;text-shadow:0 0 10px #fff,0 0 20px #73ff55}
+#dashBtn::after{content:"NOVA";display:block;font-size:9px;font-weight:1000;letter-spacing:2px;margin-top:2px}
+#dashBtn.cooling::after{content:attr(data-cd);font-size:11px;letter-spacing:1px}
+
+/* V28 desktop bomb visibility fix */
+#dashBtn{display:block!important;visibility:visible!important;z-index:30!important;pointer-events:auto!important}
+@media (pointer:fine) and (min-width:901px){
+ #dashBtn{
+   display:block!important;visibility:visible!important;
+   left:50%!important;top:126px!important;bottom:auto!important;
+   transform:translateX(-50%)!important;
+   width:78px!important;height:78px!important;
+   z-index:50!important;
+ }
+ #pauseBtn{left:calc(50% - 82px)!important;top:139px!important;transform:none!important;z-index:40!important}
+ #soundCtl{left:calc(50% + 82px)!important;top:144px!important;transform:none!important;z-index:40!important}
+}
+
+/* V29 PC-only control repair. Mobile layout is untouched. */
+@media (pointer:fine) and (min-width:901px){
+ #touchUI{
+   display:block!important;visibility:visible!important;
+   height:190px!important;min-height:190px!important;overflow:visible!important;
+   position:relative!important;
+ }
+ #controlStatus{height:44px!important}
+ .powerMeters{height:42px!important}
+ .stickZone{display:none!important} /* touch sticks are irrelevant on PC and could intercept mouse input */
+ #dashBtn{
+   display:flex!important;visibility:visible!important;opacity:1!important;
+   align-items:center!important;justify-content:center!important;flex-direction:column!important;
+   position:absolute!important;left:50%!important;top:94px!important;bottom:auto!important;
+   transform:translateX(-50%)!important;width:82px!important;height:82px!important;
+   z-index:999!important;pointer-events:auto!important;
+ }
+ #pauseBtn{
+   display:block!important;position:absolute!important;
+   left:calc(50% - 155px)!important;top:111px!important;
+   transform:none!important;z-index:100!important;pointer-events:auto!important;
+ }
+ #soundCtl{
+   display:flex!important;position:absolute!important;
+   left:calc(50% + 75px)!important;top:118px!important;
+   transform:none!important;z-index:100!important;pointer-events:auto!important;
+ }
+}
+
+/* V30: PC also shows the complete smartphone-style control panel */
+@media (pointer:fine) and (min-width:901px){
+ #touchUI{
+   display:block!important;visibility:visible!important;
+   height:220px!important;min-height:220px!important;overflow:hidden!important;
+ }
+ .stickZone{
+   display:block!important;visibility:visible!important;
+   top:88px!important;height:124px!important;width:31%!important;
+   pointer-events:auto!important;
+ }
+ #moveZone{left:1%!important}
+ #aimZone{right:1%!important}
+ #dashBtn{
+   display:flex!important;visibility:visible!important;
+   left:50%!important;top:135px!important;bottom:auto!important;
+   transform:translateX(-50%)!important;width:64px!important;height:64px!important;
+   z-index:999!important;
+ }
+ #pauseBtn{left:50%!important;top:92px!important;transform:translateX(-50%)!important}
+ #soundCtl{left:50%!important;top:177px!important;transform:translateX(-50%)!important}
+}
+
+/* V32 PC-only: stable full-panel layout without changing the canvas' own sizing rules */
+@media (pointer:fine) and (min-width:901px){
+ html,body{height:100%;margin:0!important;overflow:hidden!important}
+ body{display:flex!important;align-items:flex-start!important;justify-content:center!important}
+ #wrap{
+   position:relative!important;
+   height:100vh!important;max-height:100vh!important;
+   overflow:hidden!important;
+ }
+ #touchUI{
+   display:block!important;visibility:visible!important;
+   position:absolute!important;left:0!important;right:0!important;bottom:0!important;
+   height:180px!important;min-height:180px!important;
+   z-index:500!important;overflow:hidden!important;
+   background:#03101bea!important;border-top:1px solid #3ddfff88!important;
+ }
+ /* Leave the game's original canvas dimensions intact; scale its visible height above the panel */
+ canvas#c{
+   display:block!important;
+   height:calc(100vh - 180px)!important;
+   width:auto!important;max-width:100%!important;
+   margin:0 auto!important;
+ }
+ #controlStatus{height:44px!important;padding:4px 12px!important;grid-template-columns:210px 210px 1fr!important;gap:10px!important}
+ .powerMeters{height:40px!important;padding:0 12px!important;gap:3px 8px!important}
+ .powerMeters .pmrow{font-size:9px!important}.powerMeters .pbar{height:5px!important}
+ .stickZone{display:block!important;visibility:visible!important;top:83px!important;height:92px!important;width:31%!important}
+ .stickZone .ring{width:78px!important;height:78px!important;top:48%!important}
+ .stickZone .knob{width:36px!important;height:36px!important;top:48%!important}
+ .stickZone span{bottom:0!important;font-size:9px!important}
+ #dashBtn{
+   display:flex!important;visibility:visible!important;
+   left:50%!important;top:101px!important;bottom:auto!important;
+   transform:translateX(-50%)!important;width:66px!important;height:66px!important;
+   z-index:999!important;
+ }
+ #pauseBtn{left:calc(50% - 112px)!important;top:114px!important;transform:none!important;width:46px!important;height:34px!important}
+ #soundCtl{left:calc(50% + 76px)!important;top:119px!important;transform:none!important;font-size:11px!important}
+ #volume{width:72px!important}
+ #boardHelp{display:none!important}
+}
+
+/* V33 rarity upgrade cards */
+.rarityCard{position:relative!important;padding-top:42px!important}
+.rarityCard .rarityTag{position:absolute;top:10px;left:12px;border:1px solid;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:1000;letter-spacing:1px}
+.rarityCard b{display:block;margin-bottom:8px}.rarityCard span:not(.rarityTag){display:block}
+
+/* V34 expanded boss shop */
+#cards{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+#cards .card{box-sizing:border-box}
+@media (min-width:901px){#cards .card{flex:0 1 190px;min-height:140px}}
+@media (max-width:900px){#cards .card{flex:1 1 29%;min-width:135px}}
+
+/* V35 progression additions */
+.resultGrid{display:grid;grid-template-columns:1fr auto;gap:8px 24px;max-width:360px;margin:14px auto 18px;text-align:left;padding:14px 18px;background:#07182dcc;border:1px solid #4edfff66;border-radius:14px}
+.resultGrid b{text-align:right;color:#9dffef}
+.rarityCard[data-rarity="レジェンダリー"]{background:linear-gradient(145deg,#39260b,#14243c)!important;animation:legendPulse 1.2s infinite alternate}
+@keyframes legendPulse{from{box-shadow:0 0 12px #ffb00088}to{box-shadow:0 0 30px #ffe46bcc}}
+
+/* V47 game-speed selector */
+#speedCtl{position:absolute;left:50%;top:150px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;z-index:1002;font-size:9px;font-weight:900;color:#aeefff;white-space:nowrap}
+#speedCtl button{min-width:32px;height:25px;padding:0 6px;border:1px solid #4bcfff88;border-radius:7px;background:#071a2b;color:#bceeff;font-weight:1000;cursor:pointer}
+#speedCtl button.active{background:#16749a;color:#fff;border-color:#8deaff;box-shadow:0 0 9px #42dfff88}
+@media (pointer:fine) and (min-width:901px){#speedCtl{left:calc(50% + 84px);top:148px;transform:none}}
+
+#difficultySelect{display:flex;justify-content:center;gap:10px;margin:14px 0 12px;flex-wrap:wrap}
+#difficultySelect .difficultyBtn{min-width:112px;padding:10px 12px;border:1px solid #46cfff88;border-radius:10px;background:#071522;color:#bfeeff;font-weight:1000;line-height:1.15;cursor:pointer}
+#difficultySelect .difficultyBtn small{font-size:9px;opacity:.82;font-weight:800}
+#difficultySelect .difficultyBtn.active{background:#126c91;color:#fff;border-color:#9beeff;box-shadow:0 0 15px #41dcff77}
+#difficultySelect .difficultyBtn[data-difficulty="easy"].active{background:#176f4a;border-color:#75ffad}
+#difficultySelect .difficultyBtn[data-difficulty="hard"].active{background:#7d2435;border-color:#ff8096}
+
+.shopHeader{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:4px}
+.shopHeader .logo{margin:0!important}
+#leaveShopTop{width:auto!important;min-width:190px!important;margin:0!important;padding:9px 13px!important;font-size:12px!important;background:#123b50!important;border-color:#6de7ff!important;color:#eaffff!important;box-shadow:0 0 10px #43dfff55!important}
+
+/* V51: speed controls must win pointer input over the aim zone on desktop */
+#speedCtl{pointer-events:auto!important;z-index:2005!important}
+#speedCtl .speedBtn{pointer-events:auto!important;touch-action:manipulation!important;position:relative!important;z-index:2006!important}
+
+/* V52 boss shop: readable two-column, three-line product cards */
+#cards.shopGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px 12px!important;max-width:820px!important;margin:0 auto!important;align-items:stretch!important}
+#cards.shopGrid .card{width:100%!important;min-height:82px!important;height:auto!important;padding:9px 12px!important;margin:0!important;text-align:left!important;display:grid!important;grid-template-rows:auto auto auto!important;align-content:center!important;gap:4px!important;line-height:1.15!important;overflow:visible!important}
+#cards.shopGrid .shopName{display:block!important;margin:0!important;font-size:14px!important;color:#71e7ff!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#cards.shopGrid .shopEffect{display:block!important;font-size:12px!important;color:#e4f4ff!important;white-space:normal!important;overflow-wrap:anywhere!important}
+#cards.shopGrid .shopPrice{display:block!important;font-size:11px!important;color:#b9d8e9!important;white-space:nowrap!important}
+@media(max-width:520px){#cards.shopGrid{grid-template-columns:1fr!important}}
+
+/* V54 MAX state */
+.card.maxed,.card:disabled{opacity:.52!important;filter:grayscale(.65)!important;cursor:not-allowed!important;border-color:#74808c!important;box-shadow:none!important}
+.maxTag{color:#ffda68!important;border-color:#ffda68!important;background:#4a3a0b!important}
+.card.maxed .shopPrice{color:#ffda68!important;font-weight:1000!important}
+
+.metaPoint{margin:8px auto 10px;padding:7px 14px;border:1px solid #ffd85a88;border-radius:10px;color:#ffd85a;background:#2a2209aa;width:max-content;max-width:90%}
+#metaShopBtn{background:#173b47;border-color:#6de7ff;margin:4px 8px 10px}
+#metaCards.shopGrid{max-width:760px!important}
+
+/* V59 permanent shop: strict two columns, exactly three readable rows */
+#metaCards.shopGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px 12px!important;max-width:820px!important;margin:0 auto!important;align-items:stretch!important}
+#metaCards .card{width:100%!important;min-height:82px!important;height:auto!important;padding:9px 12px!important;margin:0!important;text-align:left!important;display:grid!important;grid-template-rows:auto auto auto!important;align-content:center!important;gap:4px!important;line-height:1.15!important;overflow:visible!important}
+#metaCards .shopName{display:block!important;font-size:14px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#metaCards .shopEffect{display:block!important;font-size:12px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+#metaCards .shopPrice{display:block!important;font-size:11px!important;white-space:nowrap!important}
+@media(max-width:520px){#metaCards.shopGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}#metaCards .card{padding:7px!important}#metaCards .shopName{font-size:11px!important}#metaCards .shopEffect{font-size:9px!important}#metaCards .shopPrice{font-size:9px!important}}
+
+/* V62 mobile portrait usability fix */
+@media (max-width:700px) and (orientation:portrait){
+  #overlay{
+    align-items:start!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding:10px 0 230px!important;
+  }
+  #panel{
+    width:96%!important;
+    max-width:96%!important;
+    max-height:none!important;
+    overflow:visible!important;
+    margin:0 auto!important;
+    padding:14px 10px 18px!important;
+  }
+  #panel .logo{font-size:32px!important;line-height:1.12!important}
+  #panel .tag{font-size:13px!important}
+  #difficultySelect{gap:8px!important}
+  #difficultySelect .difficultyBtn{min-width:0!important;width:31%!important;padding:10px 4px!important}
+  #metaShopBtn,#start{display:inline-block!important;visibility:visible!important;margin:6px 4px!important}
+  #touchUI{z-index:500!important}
+  #speedCtl{
+    position:absolute!important;
+    left:50%!important;
+    top:82px!important;
+    bottom:auto!important;
+    transform:translateX(-50%)!important;
+    width:235px!important;
+    display:flex!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:5px!important;
+    z-index:2100!important;
+  }
+  #speedCtl .speedBtn{min-width:42px!important;height:34px!important}
+  #dashBtn{
+    left:50%!important;
+    top:132px!important;
+    bottom:auto!important;
+    transform:translateX(-50%)!important;
+    z-index:2050!important;
+  }
+  #pauseBtn{
+    left:50%!important;
+    top:91px!important;
+    transform:translateX(-50%)!important;
+    z-index:2200!important;
+  }
+}
+
+/* V63: mobile control separation + larger portrait game viewport */
+@media (max-width:700px) and (orientation:portrait){
+  /* Give the actual game canvas substantially more vertical room. */
+  #wrap{height:100dvh!important;min-height:100dvh!important}
+  canvas#game{
+    height:calc(100dvh - 245px)!important;
+    min-height:430px!important;
+    width:100%!important;
+    object-fit:contain!important;
+  }
+  #touchUI{
+    height:245px!important;
+    min-height:245px!important;
+    bottom:0!important;
+    overflow:visible!important;
+  }
+  /* Status/meter area stays at top of control board. */
+  #controlStatus{height:50px!important}
+  .powerMeters{height:62px!important}
+  /* Put pause in the center, speed controls left of NOVA, sound controls right. */
+  #pauseBtn{
+    left:50%!important;top:118px!important;bottom:auto!important;
+    transform:translateX(-50%)!important;z-index:2300!important;
+  }
+  #dashBtn{
+    left:50%!important;top:158px!important;bottom:auto!important;
+    transform:translateX(-50%)!important;width:78px!important;height:78px!important;
+    z-index:2200!important;
+  }
+  #speedCtl{
+    left:calc(50% - 132px)!important;top:174px!important;bottom:auto!important;
+    transform:none!important;width:118px!important;
+    display:grid!important;grid-template-columns:repeat(3,36px)!important;
+    gap:4px!important;z-index:2300!important;
+  }
+  #speedCtl>span{grid-column:1/-1!important;text-align:center!important;font-size:9px!important}
+  #speedCtl .speedBtn{min-width:36px!important;width:36px!important;height:32px!important;padding:0!important}
+  #soundCtl{
+    left:calc(50% + 88px)!important;right:auto!important;top:174px!important;bottom:auto!important;
+    transform:none!important;width:120px!important;z-index:2300!important;
+    display:flex!important;align-items:center!important;gap:4px!important;font-size:10px!important;
+  }
+  #volume{width:66px!important}
+  .stickZone{top:132px!important;height:108px!important}
+  .stickZone .ring{width:88px!important;height:88px!important}
+}
+/* Landscape phones/tablets: keep speed, NOVA and sound in separate lanes. */
+@media (min-width:701px) and (pointer:coarse){
+  #speedCtl{
+    left:calc(50% - 145px)!important;top:118px!important;bottom:auto!important;
+    transform:none!important;width:125px!important;z-index:2300!important;
+  }
+  #dashBtn{
+    left:50%!important;top:101px!important;bottom:auto!important;
+    transform:translateX(-50%)!important;z-index:2200!important;
+  }
+  #soundCtl{
+    left:calc(50% + 90px)!important;right:auto!important;top:119px!important;bottom:auto!important;
+    transform:none!important;z-index:2300!important;
+  }
+}
+
+/* V71 PORTRAIT SYSTEM UPGRADE — always fit without scrolling */
+@media (max-aspect-ratio:4/5){
+ html.mobileUI body.upgradeMode #overlay{
+   position:absolute!important;inset:0!important;display:grid!important;place-items:center!important;
+   overflow:hidden!important;padding:4px!important;box-sizing:border-box!important;
+ }
+ html.mobileUI body.upgradeMode #panel{
+   width:98%!important;max-width:none!important;height:auto!important;max-height:98%!important;
+   overflow:hidden!important;padding:8px 6px!important;margin:0!important;box-sizing:border-box!important;
+ }
+ html.mobileUI body.upgradeMode #panel>.logo{
+   font-size:clamp(22px,6vw,30px)!important;line-height:1!important;letter-spacing:3px!important;margin:2px 0 5px!important;
+ }
+ html.mobileUI body.upgradeMode #panel>p{
+   font-size:11px!important;line-height:1.25!important;margin:4px 0 7px!important;white-space:normal!important;
+ }
+ html.mobileUI body.upgradeMode #panel>p span{font-size:8px!important;line-height:1.15!important}
+ html.mobileUI body.upgradeMode #cards{
+   display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;
+   width:100%!important;margin:0!important;align-items:stretch!important;
+ }
+ html.mobileUI body.upgradeMode #cards .card{
+   width:100%!important;min-width:0!important;min-height:0!important;height:150px!important;
+   padding:28px 8px 8px!important;margin:0!important;box-sizing:border-box!important;overflow:hidden!important;
+   font-size:11px!important;line-height:1.2!important;
+ }
+ html.mobileUI body.upgradeMode #cards .card .rarityTag{
+   top:7px!important;left:7px!important;padding:2px 6px!important;font-size:8px!important;letter-spacing:0!important;
+ }
+ html.mobileUI body.upgradeMode #cards .card b{
+   font-size:12px!important;line-height:1.1!important;margin:2px 0 7px!important;overflow-wrap:anywhere!important;
+ }
+ html.mobileUI body.upgradeMode #cards .card span:not(.rarityTag){
+   font-size:10px!important;line-height:1.25!important;overflow-wrap:anywhere!important;
+ }
+}
+@media (max-width:430px) and (max-aspect-ratio:4/5){
+ html.mobileUI body.upgradeMode #cards .card{height:138px!important;padding:25px 6px 6px!important}
+ html.mobileUI body.upgradeMode #cards .card b{font-size:11px!important}
+ html.mobileUI body.upgradeMode #cards .card span:not(.rarityTag){font-size:9px!important}
+}
+
+</style>
+</head>
+<body>
+<div id="wrap" tabindex="0">
+<canvas id="game" width="1280" height="720"></canvas>
+<div id="hud">
+
+ <div id="bossbar"><b>RIFT GUARDIAN</b><div class="bar" style="width:100%"><div id="bossfill" class="bossfill"></div></div></div>
+ <div id="msg"></div>
+ 
+</div>
+
+
+<div id="overlay"><div class="panel" id="panel">
+ <div class="logo">匠のサンプルゲーム1</div><div class="tag">ARENA PROTOCOL · OFFLINE EDITION</div>
+ <p>光るアリーナで敵の群れを撃破し、アップグレードを重ねてボスを倒せ。</p>
+ <div id="difficultySelect" aria-label="難易度選択">
+  <button type="button" class="difficultyBtn" data-difficulty="easy">EASY<br><small>初期HP 400</small></button>
+  <button type="button" class="difficultyBtn active" data-difficulty="normal">NORMAL<br><small>初期HP 100</small></button>
+  <button type="button" class="difficultyBtn" data-difficulty="hard">HARD<br><small>初期HP 50</small></button>
+ </div>
+ <div class="metaPoint">永久強化ポイント <b id="initialMetaPoints">0</b></div>
+ <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.1 ／ NORMAL ×1 ／ HARD ×10</div>
+ <button id="metaShopBtn">⚙ 永久強化ショップ</button>
+ <button id="start">START MISSION</button>
+ <div class="small" id="padstate">永久強化ポイントで永久強化を購入できます。</div>
+</div></div>
+</div>
+<div id="touchUI">
+<div id="controlStatus">
+ <div class="controlVital"><div class="pmrow"><span>体力</span><span id="hpText">100/100</span></div><div class="bar controlBar"><div id="hp" class="fill"></div></div></div>
+ <div class="controlVital"><div class="pmrow"><span>シールド</span><span id="shieldText">0/0</span></div><div class="bar shieldbar controlBar"><div id="shieldFill" class="shieldfill"></div></div></div>
+ <div id="stats">ウェーブ 1　ポイント 0　×1.0</div>
+</div>
+ <div class="powerMeters" id="powerMeters">
+  <div class="pm"><div class="pmrow"><span>レーザー本数</span><span id="laserMeterText">1 / 10</span></div><div class="pbar"><div id="laserMeter" class="pfill" style="width:20%"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>攻撃力</span><span id="atkMeterText">18 / 80</span></div><div class="pbar"><div id="atkMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>移動速度</span><span id="speedMeterText">420 / 540</span></div><div class="pbar"><div id="speedMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>連射速度</span><span id="rateMeterText">初期</span></div><div class="pbar"><div id="rateMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>ボム再使用</span><span id="bombMeterText">5.5s / 3.0s</span></div><div class="pbar"><div id="bombMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>クリティカル率</span><span id="critMeterText">0% / 30%</span></div><div class="pbar"><div id="critMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>自動回復</span><span id="regenMeterText">0.0 HP/秒</span></div><div class="pbar"><div id="regenMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>バリア</span><span id="barrierMeterText">0 / 0</span></div><div class="pbar"><div id="barrierMeter" class="pfill"></div></div></div>
+ </div>
+
+ <div id="moveZone" class="stickZone"><div class="ring"></div><div class="knob"></div><span>移動</span></div>
+ <div id="aimZone" class="stickZone"><div class="ring"></div><div class="knob"></div><span>照準 / レーザー</span></div>
+ <button id="dashBtn" type="button">ボム</button>
+ <button id="pauseBtn" type="button">Ⅱ</button>
+ <div id="soundCtl"><span>🔊</span><input id="volume" type="range" min="0" max="100" value="35" aria-label="音量"></div>
+ <div id="speedCtl" aria-label="ゲームスピード">
+  <span>速度</span>
+  <button type="button" class="speedBtn active" data-speed="1">×1</button>
+  <button type="button" class="speedBtn" data-speed="2">×2</button>
+  <button type="button" class="speedBtn" data-speed="4">×4</button>
+ </div>
+<div id="boardHelp">スマホ: 左スティック移動 / 右スティック照準＋レーザー / BOMB　｜　Xbox: 左移動 / 右照準 / RTレーザー / Aボム</div></div>
+<script>
+function yellowNumbers(html){
+ return String(html).replace(/(?<![A-Za-z])([+\-]?\d+(?:\.\d+)?(?:\s*\/\s*[+\-]?\d+(?:\.\d+)?)?%?)/g,'<span class="uiNumber">$1</span>');
+}
+
+if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){document.documentElement.classList.add("mobileUI");document.body.classList.add("titleMode");}
+
+"use strict";
+window.addEventListener("error",e=>{
+ const m=document.getElementById("msg");
+ if(m){m.textContent="ERROR: "+e.message;m.style.color="#ff6688";}
+});
+const cv=document.getElementById("game"),ctx=cv.getContext("2d"),wrap=document.getElementById("wrap");
+const hpEl=document.getElementById("hp"),stats=document.getElementById("stats"),msg=document.getElementById("msg"),overlay=document.getElementById("overlay"),panel=document.getElementById("panel"),bossbar=document.getElementById("bossbar"),bossfill=document.getElementById("bossfill");
+const W=cv.width,H=cv.height,TAU=Math.PI*2;
+let keys={},mouse={x:W/2,y:H/2,down:false},touchMove={x:0,y:0},touchAim={x:0,y:0,active:false},running=false,paused=false,last=0,t=0,wave=1,score=0,mult=1,spawnLeft=0,spawnTimer=0,waveDelay=0,boss=null,shake=0,flash=0;
+let bullets=[],enemies=[],particles=[],orbs=[],texts=[],lasers=[],waveActive=false,biome=0,bgTime=0;
+let explosionFx=[],gameSpeed=1;
+let selectedDifficulty="normal";
+const META_KEY="takumi_sample_game_1_meta_v1";
+let meta={points:0,hp:0,damage:0,speed:0,regen:0,shield:0,laser:0,crit:0,pierce:0,explode:0,nova:0,pointBoost:0,rarity:0,barrier:0,revive:0,bossHunter:0};
+let runBanked=false;
+function loadMeta(){try{const x=JSON.parse(localStorage.getItem(META_KEY)||"null");if(x)meta=Object.assign(meta,x)}catch(_){}}
+function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(meta))}catch(_){}}
+loadMeta();
+const metaDefs=[
+ {id:"hp",name:"永久HP強化",desc:"開始時の最大HP +5%",max:10,base:300},
+ {id:"damage",name:"永久攻撃力強化",desc:"開始時の攻撃力 +3%",max:10,base:400},
+ {id:"speed",name:"永久移動速度強化",desc:"開始時の移動速度 +2%",max:10,base:350},
+ {id:"regen",name:"永久自動回復",desc:"開始時の自動回復 +0.1 HP/秒",max:10,base:500},
+ {id:"shield",name:"永久シールド",desc:"開始時のシールド +20",max:10,base:450},
+ {id:"laser",name:"レーザー拡張",desc:"最大Lvで開始レーザー +1本",max:5,base:1100},
+ {id:"crit",name:"クリティカル研究",desc:"開始時クリティカル率 +1%",max:10,base:650},
+ {id:"pierce",name:"貫通研究",desc:"最大Lvで開始時 貫通 +1",max:5,base:1000},
+ {id:"explode",name:"爆発研究",desc:"最大Lvで開始時 爆発Lv +1",max:5,base:1000},
+ {id:"nova",name:"NOVA強化",desc:"ボム再使用時間 -3%",max:5,base:700},
+ {id:"pointBoost",name:"ポイントブースト",desc:"敵撃破POINT +2%",max:10,base:800},
+ {id:"rarity",name:"レアリティ強化",desc:"高レア報酬の出現率UP",max:10,base:900},
+ {id:"barrier",name:"バリアジェネレーター",desc:"開始時バリア +1回",max:3,base:1000},
+ {id:"revive",name:"緊急修復",desc:"致死時HP25%で復活 1回",max:1,base:5000},
+ {id:"bossHunter",name:"ボスハンター",desc:"ボスへのレーザー威力 +2%",max:10,base:850}
+];
+function metaCost(d){return Math.round((d.base*20)*(1+(meta[d.id]||0)*.55)/50)*50}
+function permanentPointMultiplier(){
+ return selectedDifficulty==="easy"?.1:selectedDifficulty==="hard"?10:1;
+}
+function bankRunPoints(){
+ if(runBanked)return 0;runBanked=true;
+ const add=Math.max(0,Math.round((runStats?.earned||0)*permanentPointMultiplier()));meta.points+=add;saveMeta();return add;
+}
+
+let player,waveMod=null,bossDeathPending=false,runStats={kills:0,bosses:0,maxMult:1,earned:0,eliteKills:0};
+const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function message(text,seconds=1.5){
+ msg.textContent=text;
+ clearTimeout(message._timer);
+ message._timer=setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},seconds*1000);
+}
+function reset(){
+ document.body.classList.remove("titleMode","upgradeMode");
+ const baseHp=selectedDifficulty==="easy"?400:selectedDifficulty==="hard"?50:100;
+ const startHp=Math.round(baseHp*(1+(meta.hp||0)*.05));
+ const startDamage=18*(1+(meta.damage||0)*.03),startSpeed=420*(1+(meta.speed||0)*.02),startRegen=(meta.regen||0)*.1,startShield=(meta.shield||0)*20;
+ const startShots=(meta.laser||0)>=5?2:1,startPierce=(meta.pierce||0)>=5?1:0,startExplode=(meta.explode||0)>=5?1:0;
+ const startCrit=Math.min(.30,(meta.crit||0)*.01),startBomb=Math.max(3,5.5*(1-(meta.nova||0)*.03)),startBarrier=meta.barrier||0;
+ player={x:W/2,y:H/2,r:14,hp:startHp,maxHp:startHp,speed:startSpeed,vx:0,vy:0,shield:startShield,maxShield:startShield,fire:0,fireRate:.115,damage:startDamage,bulletSpeed:760,spread:0,shots:startShots,bombCd:0,bombBase:startBomb,inv:0,angle:0,regen:startRegen,pierce:startPierce,explode:startExplode,crit:startCrit,bombOnKill:0,barrier:startBarrier,barrierMax:startBarrier,barrierDamage:startBarrier?24:0,revives:(meta.revive||0)>0?1:0,bossHunter:(meta.bossHunter||0)*.02};
+ bullets=[];enemies=[];particles=[];orbs=[];texts=[];lasers=[];explosionFx=[];wave=1;biome=0;score=0;mult=1;shake=0;flash=0;boss=null;waveMod=null;bossDeathPending=false;runStats={kills:0,bosses:0,maxMult:1,earned:0,eliteKills:0};runBanked=false;running=true;paused=false;overlay.style.display="none";startWave();wrap.focus();
+}
+function startWave(){
+ biome=(wave-1)%3;
+ waveMod=null;
+ if(wave%5!==0 && wave>=3 && Math.random()<.28){
+  const mods=[
+   {id:"rush",name:"⚡ RUSH WAVE",desc:"敵速度 +30%",speed:1.30},
+   {id:"elite",name:"💎 ELITE SURGE",desc:"エリート出現率 大幅UP",elite:.32},
+   {id:"bounty",name:"★ BOUNTY WAVE",desc:"獲得POINT 2倍",points:2},
+   {id:"barrage",name:"☄ BARRAGE WAVE",desc:"射撃敵が強化",fire:.72}
+  ]; waveMod=mods[Math.floor(Math.random()*mods.length)];
+ }
+ message(waveMod?waveMod.name+" — "+waveMod.desc:BIOMES[biome].name+" — "+BIOMES[biome].sub,1.7);
+ waveActive=true;
+ msg.textContent=wave%5===0?"⚠ BOSS WAVE "+wave:(waveMod?waveMod.name+" / WAVE "+wave:"WAVE "+wave);
+ setTimeout(()=>{if(running)msg.textContent=""},1600);
+ if(wave%5===0){
+  spawnBoss();for(let i=0;i<3;i++)edgeSpawn();spawnLeft=0;spawnTimer=0;
+ }else{
+  spawnLeft=Math.round((6+wave*1.65+Math.min(wave,30)*.22)*(waveMod?.id==="rush"?1.18:1));spawnTimer=0;
+ }
+}
+function spawnBoss(){
+ const stage=Math.floor(wave/5)-1,bossKind=stage%4;
+ const names=["クリスタル・ガーディアン","ヴォイド・レーザー","リフト・ラム","スウォーム・コア"];
+ const hp=(760+wave*105)*(1+Math.min(wave,30)*.012);
+ boss={x:W/2,y:110,r:56,hp,maxHp:hp,speed:65,fire:1,type:"boss",bossKind,phase:0,reinforce:bossKind===3?2.7:4.5,dash:1.8,beam:2.5};
+ enemies.push(boss);bossbar.style.display="block";
+ const bb=bossbar.querySelector("b");if(bb)bb.textContent=names[bossKind];
+}
+function edgeSpawn(){
+ let side=Math.floor(Math.random()*4),x,y;if(side===0){x=rnd(30,W-30);y=-30}else if(side===1){x=W+30;y=rnd(30,H-30)}else if(side===2){x=rnd(30,W-30);y=H+30}else{x=-30;y=rnd(30,H-30)}
+ const bossClears=Math.floor((wave-1)/5);
+ let pool=["chaser"];
+ if(wave>2)pool.push("shooter");
+ if(wave>3)pool.push("tank");
+ if(bossClears>=1)pool.push("dasher");
+ if(bossClears>=2)pool.push("splitter");
+ if(bossClears>=3)pool.push("orbiter");
+ if(bossClears>=4)pool.push("sniper");
+ if(bossClears>=5)pool.push("healer");
+ let type=pool[Math.floor(Math.random()*pool.length)];
+ const dw=Math.min(wave,30)+Math.max(0,wave-30)*.35;
+ let hp=type==="tank"?90+dw*8:type==="shooter"?42+dw*4:type==="dasher"?38+dw*4:type==="splitter"?65+dw*6:type==="orbiter"?55+dw*5:type==="sniper"?48+dw*5:type==="healer"?72+dw*6:34+dw*4;
+ let rad=type==="tank"?23:type==="splitter"?21:type==="healer"?20:type==="sniper"?18:type==="shooter"||type==="orbiter"?17:type==="dasher"?14:15;
+ let spd=type==="tank"?55:type==="shooter"?75:type==="dasher"?125:type==="splitter"?70:type==="orbiter"?105:type==="sniper"?65:type==="healer"?62:95+wave*2;
+ const eliteChance=waveMod?.elite??Math.min(.06+wave*.002, .14),elite=Math.random()<eliteChance;
+ if(elite){hp*=2.15;rad*=1.18;spd*=1.10}
+ if(waveMod?.speed)spd*=waveMod.speed;
+ enemies.push({x,y,r:rad,hp,maxHp:hp,speed:spd,type,elite,fire:rnd(.3,1.3),phase:rnd(0,TAU),dash:rnd(.6,1.4),heal:rnd(1.5,2.5)});
+}
+function burst(x,y,color,n=12,s=180){for(let i=0;i<n;i++){let a=rnd(0,TAU),v=rnd(s*.25,s);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.25,.7),max:.7,color,size:rnd(2,5)})}}
+function floating(x,y,text,color="#fff"){texts.push({x,y,text,color,life:1})}
+function shoot(){
+ if(player.fire>0)return;player.fire=player.fireRate;tone(620,.055,"sawtooth",.018);
+ for(let base=0;base<player.shots;base++){
+  const rear=base>=5,slot=rear?base-5:base;
+  // 1-5 fire toward the aim direction; 6-10 fire from the opposite side toward the rear.
+  let ang=player.angle+(rear?Math.PI:0)+(slot-2)*.11+rnd(-player.spread,player.spread);
+  let side=rear?6:-5, muzzle=rear?41:41;
+  let sx=player.x+Math.cos(ang)*muzzle-Math.sin(ang)*side,sy=player.y+Math.sin(ang)*muzzle+Math.cos(ang)*side,maxLen=900;
+  let hits=[];
+  for(let e of enemies){
+   if(e.hp<=0)continue;
+   let ex=e.x-sx,ey=e.y-sy,along=ex*Math.cos(ang)+ey*Math.sin(ang);
+   if(along<0||along>maxLen)continue;
+   let perp=Math.abs(-Math.sin(ang)*ex+Math.cos(ang)*ey);
+   if(perp<e.r+10)hits.push({e,along});
+  }
+  hits.sort((x,y)=>x.along-y.along);
+  let maxHits=1+(player.pierce||0),chosen=hits.slice(0,maxHits);
+  let beamLen=chosen.length&&!(player.pierce>0)?chosen[0].along:maxLen;
+  lasers.push({x1:sx,y1:sy,x2:sx+Math.cos(ang)*beamLen,y2:sy+Math.sin(ang)*beamLen,life:.10,max:.10});
+  for(let h of chosen){
+   let e=h.e,crit=Math.random()<(player.crit||0),beamPower=player.shots>1?.60:1,dmg=player.damage*.72*beamPower*(crit?2:1);if(e.type==="boss")dmg*=1+(player.bossHunter||0);
+   e.hp-=dmg;let hx=sx+Math.cos(ang)*h.along,hy=sy+Math.sin(ang)*h.along;
+   burst(hx,hy,crit?"#fff36b":"#8cff78",crit?10:5,130);
+   if(crit)floating(hx,hy-12,"CRITICAL!","#fff36b");
+   if(player.explode>0){
+    let lv=player.explode,synergy=(player.pierce>0&&lv>0);
+    // Lv1 small / Lv2 medium / Lv3 large. Radius and splash damage now scale strongly enough to feel different.
+    let rad=[0,62,92,128][lv]+(synergy?18:0);
+    let edmg=player.damage*([0,.34,.52,.72][lv])*(synergy?1.35:1);
+    explosionFx.push({x:e.x,y:e.y,r:0,maxR:rad,life:.28,max:.28,level:lv});
+    burst(e.x,e.y,lv===3?"#eaff7a":lv===2?"#9dff68":"#66ff55",8+lv*7,125+lv*35);
+    for(let x of enemies){
+     if(x!==e&&x.hp>0&&Math.hypot(x.x-e.x,x.y-e.y)<rad){
+      x.hp-=edmg;burst(x.x,x.y,"#b8ff72",5+lv*2,90+lv*20);
+      if(x.hp<=0)killEnemy(x);
+     }
+    }
+   }
+   if(e.hp<=0)killEnemy(e);
+  }
+ }
+ burst(player.x+Math.cos(player.angle)*20,player.y+Math.sin(player.angle)*20,"#b8ff9b",8,110);
+ if(player.shots>5)burst(player.x-Math.cos(player.angle)*20,player.y-Math.sin(player.angle)*20,"#b8ff9b",5,90);
+}
+function crystalShatter(e){
+ const c=e.elite?"#ffd85a":e.type==="boss"?"#ff5da8":"#79a86b",n=e.type==="boss"?150:e.elite?42:26;
+ for(let i=0;i<n;i++){let a=rnd(0,TAU),v=rnd(90,e.type==="boss"?520:300);particles.push({x:e.x,y:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.35,1.0),max:1,color:c,size:rnd(2,e.elite?8:6)})}
+}
+function killEnemy(e){
+ if(e.hp>0||e.counted)return;e.counted=true;
+ if(player&&player.bombOnKill>0&&e.type!=="boss")player.bombCd=Math.max(0,player.bombCd-player.bombOnKill);
+ if(e.type==="splitter"&&!e.splitDone){
+  e.splitDone=true;for(let i=0;i<2;i++){let hp=20+wave*2;enemies.push({x:e.x+rnd(-12,12),y:e.y+rnd(-12,12),r:10,hp,maxHp:hp,speed:150+wave,type:"chaser",fire:1,phase:rnd(0,TAU)})}
+ }
+ let pts=e.type==="boss"?250:e.type==="tank"?30:e.type==="healer"?35:e.type==="sniper"?30:e.type==="orbiter"?27:e.type==="splitter"?28:e.type==="dasher"?24:e.type==="shooter"?22:15;
+ if(e.elite)pts*=4;if(waveMod?.points)pts*=waveMod.points;pts=Math.round(pts*mult);
+ pts=Math.round(pts*(1+(meta.pointBoost||0)*.02));score+=pts;runStats.earned+=pts;runStats.kills++;if(e.elite)runStats.eliteKills++;if(e.type==="boss")runStats.bosses++;
+ tone(e.type==="boss"?110:330,.12,"triangle",.035);mult=Math.min(5,mult+.08);runStats.maxMult=Math.max(runStats.maxMult,mult);
+ floating(e.x,e.y,(e.elite?"ELITE ":"")+"+"+pts+" P",e.elite?"#ffd85a":"#ffe56b");
+ crystalShatter(e);burst(e.x,e.y,e.type==="boss"?"#ff3d8d":e.elite?"#ffd85a":"#58e7ff",e.type==="boss"?90:e.elite?35:20,e.type==="boss"?460:260);
+ shake=e.type==="boss"?30:e.elite?9:5;
+ if(Math.random()<(e.elite?.42:.18))orbs.push({x:e.x,y:e.y,r:7});
+ if(e===boss){
+  // Boss clear reward: immediately restore HP to maximum.
+  player.hp=player.maxHp;refreshPlayerHud();floating(player.x,player.y-38,"HP FULL RECOVERY","#75ff91");
+  boss=null;bossbar.style.display="none";bossDeathPending=true;waveActive=false;bullets=bullets.filter(b=>!b.enemy);
+  flash=.45;message("MUTANT BOSS DOWN!",.9);
+  setTimeout(()=>{if(!running)return;enemies.length=0;bullets.length=0;bossDeathPending=false;if(runStats.bosses>=5)gameClear();else victoryWave()},900);
+ }
+}
+function enemyDamageScale(){return .50+Math.min(wave-1,29)*(.50/29)+Math.max(0,wave-30)*.012}
+function enemyShot(e,a,spd=250,damage=null,r=5){
+ const base=damage??(e.type==="boss"?13:9);
+ bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r,life:4,damage:base*enemyDamageScale(),enemy:true});
+}
+function bomb(){
+ player.bombBase=0;
+
+ if(player.bombCd>0)return;
+ player.bombCd=player.bombBase??0;
+ // 全画面ボム：画面内の敵弾をすべて消す
+ bullets=bullets.filter(b=>!b.enemy);
+ // 全画面の敵すべてにダメージ。ボスは最大HPの12%までなので一撃では倒れない。
+ for(let e of enemies){
+  let dmg;
+  if(e.type==="boss"){
+   dmg=Math.min(Math.max(55,player.damage*2.2),e.maxHp*.12);
+   if(e.hp-dmg<=0)dmg=Math.max(0,e.hp-1);
+  }else{
+   dmg=Math.max(95,player.damage*5);
+  }
+  e.hp-=dmg;burst(e.x,e.y,e.type==="boss"?"#eaffd8":"#9dff80",18,280);
+  if(e.hp<=0)killEnemy(e);
+ }
+ // 画面全体を横切る衝撃波＋周囲の粒子
+ for(let i=0;i<96;i++){let q=i/96*TAU;particles.push({x:player.x,y:player.y,vx:Math.cos(q)*700,vy:Math.sin(q)*700,life:.75,max:.75,size:5,color:"#8dff75"})}
+ flash=.16;shake=18;tone(80,.25,"sawtooth",.055);tone(480,.15,"sine",.04);
+ message("FULL SCREEN BOMB",.65);
+}function damagePlayer(d){if(player.inv>0)return;
+ if(player.shield>0){let absorbed=Math.min(player.shield,d);player.shield-=absorbed;d-=absorbed;refreshPlayerHud();floating(player.x,player.y-28,"SHIELD -"+Math.round(absorbed),"#79eaff");tone(210,.09,"sine",.035)}
+ if(d>0)player.hp-=d;player.inv=.55;mult=1;shake=12;flash=.15;burst(player.x,player.y,"#ff5577",20,220);if(player.hp<=0)gameOver()}
+function bindTitle(){
+ const mp=document.getElementById("initialMetaPoints");if(mp)mp.textContent=Math.round(meta.points);
+ document.querySelectorAll(".difficultyBtn").forEach(btn=>btn.addEventListener("click",()=>{
+  selectedDifficulty=btn.dataset.difficulty||"normal";
+  document.querySelectorAll(".difficultyBtn").forEach(b=>b.classList.toggle("active",b===btn));
+  try{tone(440,.04,"sine",.018)}catch(_){}
+ }));
+ const st=document.getElementById("start");if(st)st.onclick=()=>{try{initAudio()}catch(_){};reset()};
+ const ms=document.getElementById("metaShopBtn");if(ms)ms.onclick=openMetaShop;
+}
+function showTitle(){
+ document.body.classList.remove("upgradeMode");
+ document.body.classList.add("titleMode");
+ running=false;paused=false;boss=null;waveActive=false;bossbar.style.display="none";overlay.style.display="grid";
+ panel.innerHTML=`<div class="logo">匠のサンプルゲーム1</div><div class="tag">ARENA PROTOCOL · OFFLINE EDITION</div>
+ <p>光るアリーナで敵の群れを撃破し、アップグレードを重ねてボスを倒せ。</p>
+ <div class="metaPoint">永久強化ポイント <b>${Math.round(meta.points)}</b></div>
+ <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.1 ／ NORMAL ×1 ／ HARD ×10</div>
+ <button id="metaShopBtn">⚙ 永久強化ショップ</button>
+ <div id="difficultySelect" aria-label="難易度選択">
+  <button type="button" class="difficultyBtn ${selectedDifficulty==="easy"?"active":""}" data-difficulty="easy">EASY<br><small>初期HP 400</small></button>
+  <button type="button" class="difficultyBtn ${selectedDifficulty==="normal"?"active":""}" data-difficulty="normal">NORMAL<br><small>初期HP 100</small></button>
+  <button type="button" class="difficultyBtn ${selectedDifficulty==="hard"?"active":""}" data-difficulty="hard">HARD<br><small>初期HP 50</small></button>
+ </div><button id="start">START MISSION</button>
+ <div class="small" id="padstate">獲得POINTはゲーム終了時に永久強化ポイントとして貯まります。</div>`;
+ bindTitle();
+}
+function openMetaShop(){
+ overlay.style.display="grid";
+ panel.innerHTML=`<div class="shopHeader"><div class="logo" style="font-size:30px">永久強化ショップ</div><button id="metaBack">← タイトルへ</button></div>
+ <p>所持永久強化ポイント <b id="metaPoints">${Math.round(meta.points)}</b>　永久強化ポイントで購入した強化は次回以降も保存されます。</p><div id="metaCards" class="shopGrid"></div>`;
+ const c=document.getElementById("metaCards");
+ metaDefs.forEach(d=>{
+  const lv=meta[d.id]||0,cost=metaCost(d),maxed=lv>=d.max;
+  const b=document.createElement("button");b.className="card"+(maxed?" maxed":"");b.disabled=maxed;
+  b.innerHTML=`<b class="shopName">${d.name}</b><span class="shopEffect">${yellowNumbers(d.desc)}　Lv.${lv}/${d.max}</span><span class="shopPrice">${maxed?"MAX":cost+" POINT"}</span>`;
+  b.onclick=()=>{if(meta.points<cost)return;meta.points-=cost;meta[d.id]=lv+1;saveMeta();openMetaShop();try{tone(620,.1,"triangle",.04)}catch(_){}};
+  c.appendChild(b);
+ });
+ document.getElementById("metaBack").onclick=showTitle;
+}
+function gameClear(){
+ const banked=bankRunPoints();
+ running=false;paused=true;waveActive=false;bossDeathPending=false;boss=null;bullets=[];enemies=[];
+ overlay.style.display="grid";
+ panel.innerHTML=`<div class="logo">CLEAR RESULT</div><div class="tag">ALL 5 BOSSES DEFEATED</div>
+ <h2 style="color:#9dff82;margin:14px 0 8px">ゲームクリア！</h2><p>5体のボスを撃破しました。</p>
+ <div class="report"><div>撃破数 <b>${runStats.kills}</b></div><div>エリート <b>${runStats.eliteKills}</b></div><div>最大倍率 <b>×${runStats.maxMult.toFixed(1)}</b></div><div>総獲得POINT <b>${Math.round(runStats.earned)}</b></div></div>
+ <p style="color:#ffd85a">獲得永久強化ポイント +${banked}（難易度倍率適用後）</p><button id="titleReturn">タイトルに戻る</button>`;
+ document.getElementById("titleReturn").onclick=showTitle;
+}
+function gameOver(){
+ if(player&&player.revives>0){
+  player.revives--;player.hp=Math.max(1,Math.round(player.maxHp*.25));player.inv=2.5;bullets=bullets.filter(b=>!b.enemy);
+  flash=.35;message("緊急修復！ HP25%で復活",1.5);refreshPlayerHud();return;
+ }
+ const banked=bankRunPoints();
+ running=false;bossbar.style.display="none";overlay.style.display="grid";
+ panel.innerHTML=`<div class="logo" style="font-size:38px">MISSION REPORT</div><h2>SCORE ${score}</h2>
+ <div class="resultGrid"><span>到達WAVE</span><b>${wave}</b><span>撃破数</span><b>${runStats.kills}</b><span>ボス撃破</span><b>${runStats.bosses}</b><span>エリート撃破</span><b>${runStats.eliteKills}</b><span>最大倍率</span><b>×${runStats.maxMult.toFixed(1)}</b><span>総獲得POINT</span><b>${runStats.earned}</b></div>
+ <p style="color:#ffd85a">獲得永久強化ポイント +${banked}（難易度倍率適用後）</p><button id="again">RETRY</button><button id="goTitle">タイトルへ</button>`;document.getElementById("again").onclick=reset;document.getElementById("goTitle").onclick=showTitle
+}
+function victoryWave(){
+ const clearedWave=wave;
+ wave++;
+ if(clearedWave%5===0){
+  msg.textContent="BOSS DEFEATED — SHOP OPEN";
+  enemies.length=0;bullets.length=0;orbs.length=0;lasers.length=0;
+  setTimeout(()=>{
+   if(!running)return;
+   try{openShop()}
+   catch(err){
+    console.error(err);paused=true;overlay.style.display="grid";
+    panel.innerHTML=`<div class="logo" style="font-size:32px">SHOP RECOVERY</div><p>ショップ画面を復旧しました。</p><button id="recoverNext">次のWAVEへ</button>`;
+    document.getElementById("recoverNext").onclick=()=>{overlay.style.display="none";paused=false;startWave();wrap.focus()};
+   }
+  },650);
+ }else{
+  msg.textContent="WAVE CLEAR — UPGRADE";
+  setTimeout(()=>{if(running)chooseUpgrade()},650);
+ }
+}
+const upgradeDefs=[
+ {name:"OVERCHARGE",desc:"攻撃力",apply:m=>player.damage=Math.min(80,player.damage*(1+m*.10))},
+ {name:"RAPID CORE",desc:"連射速度",apply:m=>player.fireRate=Math.max(.065,player.fireRate*(1-m*.08))},
+ {name:"TWIN SHOT",desc:"レーザー本数",discrete:true,apply:m=>player.shots=Math.min(10,player.shots+m)},
+ {name:"NANO REPAIR",desc:"最大HP",apply:m=>{let add=Math.round(player.maxHp*.15*m);player.maxHp+=add;player.hp=Math.min(player.maxHp,player.hp+add)}},
+ {name:"VECTOR DRIVE",desc:"移動速度",apply:m=>player.speed=Math.min(540,player.speed*(1+m*.04))},
+ {name:"BOMB CORE",desc:"ボム再使用時間",apply:m=>player.bombBase=Math.max(3,(player.bombBase??0)*(1-m*.10))},
+ {name:"REGEN",desc:"自動回復",apply:m=>player.regen+=.6*m},
+ {name:"貫通レーザー",desc:"貫通数",discrete:true,apply:m=>player.pierce=Math.min(3,(player.pierce||0)+m)},
+ {name:"爆発レーザー",desc:"爆発レベル",discrete:true,apply:m=>player.explode=Math.min(3,(player.explode||0)+m)},
+ {name:"クリティカル",desc:"クリティカル率",apply:m=>player.crit=Math.min(.30,(player.crit||0)+.10*m)},
+ {name:"ボムチャージ",desc:"撃破時ボム短縮",apply:m=>player.bombOnKill=Math.min(.60,(player.bombOnKill||0)+.20*m)},
+ {name:"ENERGY BARRIER",desc:"敵弾を防ぎ、接触した敵へダメージ",apply:m=>{let add=Math.round(3*m);player.barrierMax+=add;player.barrier+=add;player.barrierDamage=Math.max(player.barrierDamage,16+8*m)}}
+];
+const rarities=[
+ {name:"コモン",mult:1,weight:59.5,color:"#a9c4d8",glow:"#7ca5c2"},
+ {name:"アンコモン",mult:1.5,weight:28,color:"#69ff9b",glow:"#35e77b"},
+ {name:"レア",mult:2,weight:10,color:"#58bfff",glow:"#2b8fff"},
+ {name:"エピック",mult:2.5,weight:2,color:"#d780ff",glow:"#b84cff"},
+ {name:"レジェンダリー",mult:3.2,weight:.5,color:"#ffd85a",glow:"#ff9d00"}
+];
+function rollRarity(){
+ const bonus=Math.min(20,(meta.rarity||0)*2);
+ const weights=rarities.map((x,i)=>i===0?Math.max(0,x.weight-bonus):x.weight+bonus*(x.weight/(100-rarities[0].weight)));
+ let r=Math.random()*100,sum=0;
+ for(let i=0;i<rarities.length;i++){sum+=weights[i];if(r<sum)return rarities[i]}
+ return rarities[rarities.length-1];
+}
+function upgradeEffectText(u,r){
+ const m=r.mult;
+ if(u.name==="OVERCHARGE")return `攻撃力 +${Math.round(10*m)}%`;
+ if(u.name==="RAPID CORE")return `連射速度 +${Math.round(8*m)}%`;
+ if(u.name==="TWIN SHOT")return `レーザー +${Math.min(3,Math.ceil(m))}本（最大10本）／複数時：1本60%火力`;
+ if(u.name==="NANO REPAIR")return `最大HP +${Math.round(15*m)}%`;
+ if(u.name==="VECTOR DRIVE")return `移動速度 +${Math.round(4*m)}%`;
+ if(u.name==="BOMB CORE")return `ボム再使用時間 -${Math.round(10*m)}%`;
+ if(u.name==="REGEN")return `自動回復 +${(.6*m).toFixed(1)}/秒`;
+ if(u.name==="貫通レーザー")return `追加貫通 +${Math.min(3,Math.ceil(m))}体`;
+ if(u.name==="爆発レーザー")return `爆発レベル +${Math.min(3,Math.ceil(m))}`;
+ if(u.name==="クリティカル")return `クリティカル率 +${Math.round(10*m)}%`;
+ if(u.name==="ボムチャージ")return `撃破時ボム短縮 +${(.2*m).toFixed(1)}秒`;
+ if(u.name==="ENERGY BARRIER")return `バリア耐久 +${Math.round(3*m)}回 / 接触ダメージ`;
+ return u.desc;
+}
+function rarityApplyMult(u,r){return u.discrete?Math.min(3,Math.ceil(r.mult)):r.mult}
+
+function refreshPlayerHud(){
+ if(!player)return;
+ const setMeter=(id,textId,pct,text)=>{
+  const el=document.getElementById(id),tx=document.getElementById(textId);
+  if(el)el.style.width=Math.max(0,Math.min(100,pct))+"%";if(tx)tx.textContent=text;
+ };
+ setMeter("laserMeter","laserMeterText",player.shots/10*100,player.shots+" / 10");
+ setMeter("atkMeter","atkMeterText",player.damage/80*100,Math.round(player.damage)+" / 80");
+ setMeter("speedMeter","speedMeterText",player.speed/540*100,Math.round(player.speed)+" / 540");
+ const ratePower=(.115-player.fireRate)/(.115-.065);
+ setMeter("rateMeter","rateMeterText",ratePower*100,Math.round(ratePower*100)+"% / 最大");
+ const bombPower=(5.5-player.bombBase)/(5.5-3);
+ setMeter("bombMeter","bombMeterText",bombPower*100,"0.0s / TEST");
+ setMeter("critMeter","critMeterText",(player.crit||0)/.30*100,Math.round((player.crit||0)*100)+"% / 30%");
+ setMeter("regenMeter","regenMeterText",Math.min(100,(player.regen||0)/10*100),(player.regen||0).toFixed(1)+" HP/秒");
+ setMeter("barrierMeter","barrierMeterText",player.barrierMax>0?(player.barrier/player.barrierMax*100):0,Math.ceil(player.barrier||0)+" / "+Math.ceil(player.barrierMax||0));
+ const hpPct=Math.max(0,Math.min(1,player.hp/player.maxHp));
+ hpEl.style.width=(hpPct*100)+"%";
+ const ht=document.getElementById("hpText");
+ const sf=document.getElementById("shieldFill");
+ const st=document.getElementById("shieldText");
+ const sh=document.getElementById("shieldHud");
+ if(ht)ht.textContent=Math.ceil(player.hp)+"/"+Math.ceil(player.maxHp);
+ const shieldPct=player.maxShield>0?Math.max(0,Math.min(1,player.shield/player.maxShield)):0;
+ if(sf){
+   sf.style.width=(shieldPct*100)+"%";
+   sf.style.minWidth=player.shield>0?"4px":"0";
+ }
+ if(st)st.textContent=Math.ceil(player.shield)+"/"+Math.ceil(player.maxShield);
+ if(sh){
+   sh.style.opacity=player.maxShield>0?"1":".55";
+   sh.style.textShadow=player.shield>0?"0 0 8px #45c9ff":"none";
+ }
+}
+function openShop(){
+ paused=true;overlay.style.display="grid";
+ panel.innerHTML=`<div class="shopHeader"><div class="logo" style="font-size:34px">BOSS SHOP</div>
+ <button id="leaveShopTop" type="button">購入終了 → 次のWAVEへ</button></div>
+ <p>POINT <b id="shopPoints" class="pointNumber">${score}</b>　同じ商品も何回でも購入できます</p>
+ <div id="cards" class="shopGrid"></div><div id="shopNote" style="min-height:24px;margin-top:8px;color:#9fe7ff"></div>
+ <button id="leaveShop" style="margin-top:14px">購入終了 → 次のWAVEへ</button>`;
+ const c=document.getElementById("cards"),sp=document.getElementById("shopPoints"),note=document.getElementById("shopNote");
+ const items=[
+  ["ENERGY SHIELD","最大シールド +50 / シールド50回復",200,()=>{player.maxShield+=50;player.shield=Math.min(player.maxShield,player.shield+50)}],
+  ["PLASMA AMPLIFIER","攻撃力 +12%（最大80）",300,()=>{player.damage=Math.min(80,player.damage*1.12)}],
+  ["OVERCLOCK DRIVE","移動速度 +5% / 連射速度 +6%（上限あり）",400,()=>{player.speed=Math.min(540,player.speed*1.05);player.fireRate=Math.max(.065,player.fireRate*.94)}],
+  ["BARRIER CELL","バリア耐久 +4回 / 接触ダメージ強化",300,()=>{player.barrierMax+=4;player.barrier+=4;player.barrierDamage=Math.max(player.barrierDamage,28)}],
+  ["NOVA CAPACITOR","ボム再使用時間 -12%（最短3秒）",300,()=>{player.bombBase=Math.max(3,(player.bombBase??0)*.88);player.bombCd=Math.min(player.bombCd,player.bombBase)}],
+  ["PRISM LANCE","貫通 +1 / 爆発レベル +1（各最大3）",500,()=>{player.pierce=Math.min(3,(player.pierce||0)+1);player.explode=Math.min(3,(player.explode||0)+1)}],
+  ["CRITICAL MATRIX","クリティカル率 +10%（最大30%）",400,()=>{player.crit=Math.min(.30,(player.crit||0)+.10)}],
+  ["TWIN ARSENAL","レーザー +1（最大10本）／2本以上は1本あたり火力60%",500,()=>{player.shots=Math.min(10,player.shots+1)}],
+  ["REGEN NANITES","自動HP回復 +0.8 / 秒",400,()=>{player.regen+=.8}],
+  ["BARRIER IMPACT","バリア接触ダメージ +12 / バリア耐久 +2回",400,()=>{player.barrierDamage=(player.barrierDamage||20)+12;player.barrierMax+=2;player.barrier+=2}]
+ ];
+ const specials=[
+  ["★ STARFORGE CORE","攻撃力 +8% ＆ 最大HP +20%",700,()=>{player.damage=Math.min(80,player.damage*1.08);let add=Math.round(player.maxHp*.20);player.maxHp+=add;player.hp=Math.min(player.maxHp,player.hp+add)}],
+  ["★ PHANTOM ARRAY","レーザー +1 ＆ クリティカル +5%／2本以上は1本あたり火力60%",700,()=>{player.shots=Math.min(10,player.shots+1);player.crit=Math.min(.30,(player.crit||0)+.05)}],
+  ["★ VOID BATTERY","シールド +100 ＆ ボム即時READY",600,()=>{player.maxShield+=100;player.shield=Math.min(player.maxShield,player.shield+100);player.bombCd=0}]
+ ];
+ items.push(specials[Math.floor(Math.random()*specials.length)]);
+ function shopAvailable(it){
+  if(it[0]==="PLASMA AMPLIFIER")return player.damage<79.99;
+  if(it[0]==="OVERCLOCK DRIVE")return player.speed<539.9||player.fireRate>.0651;
+  if(it[0]==="NOVA CAPACITOR")return (player.bombBase??0)>3.001;
+  if(it[0]==="PRISM LANCE")return (player.pierce||0)<3||(player.explode||0)<3;
+  if(it[0]==="CRITICAL MATRIX")return (player.crit||0)<.299;
+  if(it[0]==="TWIN ARSENAL")return player.shots<10;
+  if(it[0]==="★ PHANTOM ARRAY")return player.shots<10||(player.crit||0)<.299;
+  return true;
+ }
+ function refreshShop(){sp.textContent=score}
+ const displayedItems=[...items].sort(()=>Math.random()-.5).slice(0,9);
+displayedItems.forEach(it=>{
+  const btn=document.createElement("button");btn.className="card";
+  const available=shopAvailable(it);
+  btn.innerHTML=`<b class="shopName">${it[0]}</b><span class="shopEffect">${yellowNumbers(it[1])}</span><span class="shopPrice">${available?`${yellowNumbers(it[2])} POINT　何度でも購入可`:"MAX　購入不可"}</span>`;
+  if(!available){btn.disabled=true;btn.classList.add("maxed");}
+  btn.onclick=()=>{
+   if(!shopAvailable(it)){note.textContent=`${it[0]} は MAX です`;return}
+   if(score<it[2]){note.textContent=`POINT不足：あと ${it[2]-score} P 必要です`;tone(180,.08,"square",.025);return}
+   score-=it[2];it[3]();refreshPlayerHud();
+   note.textContent=shopAvailable(it)?`${it[0]} を購入。さらに同じ商品も購入できます。`:`${it[0]} は MAX になりました。`;
+   if(!shopAvailable(it)){btn.disabled=true;btn.classList.add("maxed");btn.querySelector(".shopPrice").textContent="MAX　購入不可";}
+   refreshShop();tone(620,.12,"triangle",.045)
+  };
+  c.appendChild(btn)
+ });
+ const leaveShop=()=>{
+  overlay.style.display="none";paused=false;waveActive=false;startWave();wrap.focus()
+ };
+ const leaveShopBottom=document.getElementById("leaveShop");if(leaveShopBottom)leaveShopBottom.onclick=leaveShop;
+ document.getElementById("leaveShopTop").onclick=leaveShop;
+ refreshShop();
+}
+function upgradeAvailable(u){
+ if(u.name==="OVERCHARGE")return player.damage<79.99;
+ if(u.name==="RAPID CORE")return player.fireRate>.0651;
+ if(u.name==="TWIN SHOT")return player.shots<10;
+ if(u.name==="VECTOR DRIVE")return player.speed<539.9;
+ if(u.name==="BOMB CORE")return (player.bombBase??0)>3.001;
+ if(u.name==="貫通レーザー")return (player.pierce||0)<3;
+ if(u.name==="爆発レーザー")return (player.explode||0)<3;
+ if(u.name==="クリティカル")return (player.crit||0)<.299;
+ if(u.name==="ボムチャージ")return (player.bombOnKill||0)<.599;
+ return true; // HP and regeneration have no fixed maximum.
+}
+function chooseUpgrade(){
+ document.body.classList.add("upgradeMode");
+ paused=true;overlay.style.display="grid";
+ let pool=[...upgradeDefs].sort(()=>Math.random()-.5).slice(0,Math.min(3,upgradeDefs.length)).map(u=>({u,r:rollRarity()}));
+ panel.innerHTML=`<div class="logo" style="font-size:34px">SYSTEM UPGRADE</div><p>WAVEクリア報酬：1つ選択　<span style="font-size:11px;color:#9fc8df">コモン59.5% / アンコモン28% / レア10% / エピック2% / レジェンダリー0.5%</span></p><div id="cards"></div>`;
+ let c=document.getElementById("cards");upgradeButtons=[];upgradeIndex=0;
+ pool.forEach(({u,r})=>{
+  let btn=document.createElement("button");btn.className="card rarityCard";
+  btn.dataset.rarity=r.name;btn.style.borderColor=r.color;btn.style.boxShadow=`0 0 14px ${r.glow}55`;
+  const available=upgradeAvailable(u);
+  btn.innerHTML=available?`<span class="rarityTag" style="color:${r.color};border-color:${r.color}">${r.name}</span><b>${u.name}</b><span>${yellowNumbers(upgradeEffectText(u,r))}</span>`:`<span class="rarityTag maxTag">MAX</span><b>${u.name}</b><span>MAX　選択不可</span>`;
+  if(available){
+   btn.onclick=()=>{u.apply(rarityApplyMult(u,r));if(r.name==="レジェンダリー"){player.damage=Math.min(80,player.damage*1.08);player.bombCd=0;floating(player.x,player.y-30,"LEGENDARY OVERDRIVE!","#ffd85a")}refreshPlayerHud();document.body.classList.remove("upgradeMode");overlay.style.display="none";paused=false;upgradeButtons=[];startWave();wrap.focus()};
+   upgradeButtons.push(btn);
+  }else{btn.disabled=true;btn.classList.add("maxed");}
+  c.appendChild(btn)
+ });
+ if(!upgradeButtons.length){
+  let selectable=upgradeDefs.filter(upgradeAvailable);
+  if(selectable.length){
+   overlay.style.display="none";paused=false;chooseUpgrade();return;
+  }
+  overlay.style.display="none";paused=false;startWave();wrap.focus();return;
+ }
+ updateUpgradeFocus();
+}
+function updateUpgradeFocus(){
+ upgradeButtons.forEach((b,i)=>{b.style.outline=i===upgradeIndex?"3px solid #71e7ff":"none";b.style.background=i===upgradeIndex?"#17345b":"#11213b"});
+}
+function upgradePad(g){
+ if(!upgradeButtons.length)return false;
+ let left=!!g.buttons[14]?.pressed||(g.axes[0]||0)<-.55,right=!!g.buttons[15]?.pressed||(g.axes[0]||0)>.55,a=!!g.buttons[0]?.pressed;
+ if(left&&!upgradeNavPrev.left){upgradeIndex=(upgradeIndex+upgradeButtons.length-1)%upgradeButtons.length;updateUpgradeFocus()}
+ if(right&&!upgradeNavPrev.right){upgradeIndex=(upgradeIndex+1)%upgradeButtons.length;updateUpgradeFocus()}
+ if(a&&!upgradeNavPrev.a)upgradeButtons[upgradeIndex].click();
+ upgradeNavPrev={left,right,a};return true;
+}
+function getPad(){if(!navigator.getGamepads)return null;return [...navigator.getGamepads()].find(Boolean)||null}
+let prevPad={}, upgradeButtons=[], upgradeIndex=0, upgradeNavPrev={left:false,right:false,a:false};
+const pcMove={left:false,right:false,up:false,down:false};
+window.addEventListener("keydown",e=>{
+ if(e.code==="KeyA"||e.code==="ArrowLeft")pcMove.left=true;
+ if(e.code==="KeyD"||e.code==="ArrowRight")pcMove.right=true;
+ if(e.code==="KeyW"||e.code==="ArrowUp")pcMove.up=true;
+ if(e.code==="KeyS"||e.code==="ArrowDown")pcMove.down=true;
+},true);
+window.addEventListener("keyup",e=>{
+ if(e.code==="KeyA"||e.code==="ArrowLeft")pcMove.left=false;
+ if(e.code==="KeyD"||e.code==="ArrowRight")pcMove.right=false;
+ if(e.code==="KeyW"||e.code==="ArrowUp")pcMove.up=false;
+ if(e.code==="KeyS"||e.code==="ArrowDown")pcMove.down=false;
+},true);
+window.addEventListener("blur",()=>{pcMove.left=pcMove.right=pcMove.up=pcMove.down=false});
+function restoreGameFocus(){
+ setTimeout(()=>{try{wrap.focus({preventScroll:true})}catch(_){wrap.focus()}},60);
+}
+document.addEventListener("fullscreenchange",restoreGameFocus);
+document.addEventListener("webkitfullscreenchange",restoreGameFocus);
+window.addEventListener("focus",restoreGameFocus);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)restoreGameFocus()});
+
+
+function update(dt){
+ t+=dt;player.fire=Math.max(0,player.fire-dt);player.bombCd=Math.max(0,player.bombCd-dt);player.inv=Math.max(0,player.inv-dt);if(player.regen)player.hp=Math.min(player.maxHp,player.hp+player.regen*dt);
+ let dx=(pcMove.right?1:0)-(pcMove.left?1:0)+touchMove.x,dy=(pcMove.down?1:0)-(pcMove.up?1:0)+touchMove.y,pad=getPad();
+ if(pad){
+  let gx=pad.axes[0]||0,gy=pad.axes[1]||0,gm=Math.hypot(gx,gy);
+  if(gm>.012){let boosted=Math.min(1,Math.pow((gm-.012)/.988,.55));gx=gx/gm*boosted;gy=gy/gm*boosted}else{gx=gy=0}
+  dx+=gx;dy+=gy;let rx=pad.axes[2]||0,ry=pad.axes[3]||0;if(Math.hypot(rx,ry)>.25)player.angle=Math.atan2(ry,rx);if((pad.buttons[7]?.value||0)>.25)shoot();if(pad.buttons[0]?.pressed&&!prevPad.a)bomb();if(pad.buttons[9]?.pressed&&!prevPad.menu)togglePause();prevPad={a:pad.buttons[0]?.pressed,menu:pad.buttons[9]?.pressed}}
+ let l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
+ let targetVx=dx*player.speed,targetVy=dy*player.speed;
+ // Ultra-responsive movement: no acceleration lag while steering; immediate stop/reversal.
+ player.vx=targetVx; player.vy=targetVy;
+ player.x=clamp(player.x+player.vx*dt,20,W-20);player.y=clamp(player.y+player.vy*dt,20,H-20);
+ if(touchAim.active&&Math.hypot(touchAim.x,touchAim.y)>.18){player.angle=Math.atan2(touchAim.y,touchAim.x);shoot()}
+ if(mouse.down)shoot();
+ if(spawnLeft>0){spawnTimer-=dt;if(spawnTimer<=0){edgeSpawn();spawnLeft--;spawnTimer=Math.max(.24,.68-Math.min(wave,30)*.012)}}
+ for(let e of enemies){
+  let a=Math.atan2(player.y-e.y,player.x-e.x),d=dist(e,player);
+  if(e.type==="chaser"){e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt}
+  else if(e.type==="tank"){e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt}
+  else if(e.type==="shooter"){let dir=d>300?1:d<210?-1:0;e.x+=Math.cos(a)*e.speed*dir*dt;e.y+=Math.sin(a)*e.speed*dir*dt;e.fire-=dt;if(e.fire<=0){enemyShot(e,a,280);e.fire=rnd(.9,1.4)*(waveMod?.fire||1)}}
+  else if(e.type==="dasher"){e.dash-=dt;let boost=e.dash<.22?3.2:1;e.x+=Math.cos(a)*e.speed*boost*dt;e.y+=Math.sin(a)*e.speed*boost*dt;if(e.dash<=0)e.dash=rnd(1.0,1.6)}
+  else if(e.type==="splitter"){e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt}
+  else if(e.type==="orbiter"){let tangent=a+Math.PI/2,dir=d>260?1:d<170?-1:.18;e.x+=(Math.cos(a)*e.speed*dir+Math.cos(tangent)*e.speed*.75)*dt;e.y+=(Math.sin(a)*e.speed*dir+Math.sin(tangent)*e.speed*.75)*dt;e.fire-=dt;if(e.fire<=0){enemyShot(e,a,245);e.fire=rnd(1.1,1.6)*(waveMod?.fire||1)}}
+  else if(e.type==="sniper"){let dir=d>500?1:d<390?-1:0;e.x+=Math.cos(a)*e.speed*dir*dt;e.y+=Math.sin(a)*e.speed*dir*dt;e.fire-=dt;if(e.fire<=0){enemyShot(e,a,520);e.fire=rnd(1.7,2.3)*(waveMod?.fire||1)}}
+  else if(e.type==="healer"){let dir=d>380?1:d<270?-1:0;e.x+=Math.cos(a)*e.speed*dir*dt;e.y+=Math.sin(a)*e.speed*dir*dt;e.heal-=dt;if(e.heal<=0){for(let ally of enemies){if(ally!==e&&ally.type!=="boss"&&Math.hypot(ally.x-e.x,ally.y-e.y)<180)ally.hp=Math.min(ally.maxHp,ally.hp+ally.maxHp*.12)}burst(e.x,e.y,"#69ff9a",12,100);e.heal=2.2}}
+  else if(e.type==="boss"){
+   e.phase+=dt;
+   if(e.bossKind===0){
+    e.x=W/2+Math.sin(e.phase*.7)*330;e.y=110+Math.sin(e.phase*1.3)*35;
+    e.fire-=dt;if(e.fire<=0){for(let i=0;i<10;i++)enemyShot(e,i/10*TAU+e.phase,205+Math.min(wave,30)*3);enemyShot(e,a,380);e.fire=.95}
+   }else if(e.bossKind===1){
+    e.x=W/2+Math.sin(e.phase*.45)*390;e.y=105;
+    e.beam-=dt;if(e.beam<=0){for(let j=-3;j<=3;j++)enemyShot(e,a+j*.055,470,16,7);message("巨大レーザー！",.45);e.beam=2.6}
+   }else if(e.bossKind===2){
+    e.dash-=dt;let boost=e.dash<.32?5.4:.55;e.x+=Math.cos(a)*e.speed*boost*dt;e.y+=Math.sin(a)*e.speed*boost*dt;
+    if(e.dash<=0){e.dash=1.75;message("突進！",.35)}
+    e.x=clamp(e.x,55,W-55);e.y=clamp(e.y,55,H-55);
+   }else{
+    e.x=W/2+Math.sin(e.phase*.8)*260;e.y=115+Math.sin(e.phase*1.4)*45;
+    e.fire-=dt;if(e.fire<=0){for(let i=0;i<6;i++)enemyShot(e,i/6*TAU+e.phase,235);e.fire=1.15}
+   }
+   e.reinforce-=dt;
+   if(e.reinforce<=0){
+    e.reinforce=e.bossKind===3?2.3:Math.max(3.0,5.4-wave*.035);
+    let livingAdds=enemies.filter(x=>x!==e&&x.hp>0).length,maxAdds=e.bossKind===3?9:5;
+    if(livingAdds<maxAdds){for(let k=0;k<Math.min(e.bossKind===3?3:1,maxAdds-livingAdds);k++)edgeSpawn()}
+   }
+  }
+  if(dist(e,player)<e.r+player.r+(player.barrier>0?13:0)){
+   if(player.barrier>0){
+    let dx=e.x-player.x,dy=e.y-player.y,dl=Math.hypot(dx,dy)||1,nx=dx/dl,ny=dy/dl;
+    // Barrier physically repels zombies. Bosses are pushed less so they cannot be stun-locked.
+    let push=e.type==="boss"?28:e.type==="tank"?52:76;
+    e.x=clamp(e.x+nx*push,18,W-18);e.y=clamp(e.y+ny*push,18,H-18);
+    if(e.barrierHit<=0){let bd=player.barrierDamage||20;e.hp-=bd;e.barrierHit=.38;burst(e.x,e.y,"#65eaff",14,210);floating(e.x,e.y-15,"BARRIER -"+Math.round(bd),"#73eaff");tone(520,.05,"square",.02);if(e.hp<=0)killEnemy(e)}
+   }else damagePlayer((e.type==="boss"?22:e.type==="tank"?18:12)*enemyDamageScale());
+  }
+ }
+ for(let b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(b.enemy){if(Math.hypot(b.x-player.x,b.y-player.y)<b.r+player.r+(player.barrier>0?13:0)){b.life=0;if(player.barrier>0){player.barrier=Math.max(0,player.barrier-1);refreshPlayerHud();burst(b.x,b.y,"#65eaff",10,150);floating(player.x,player.y-34,"BARRIER "+player.barrier,"#73eaff");tone(760,.06,"sine",.025)}else damagePlayer(b.damage)}}else{
+  for(let e of enemies){if(e.hp>0&&Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){e.hp-=b.damage;b.life=0;burst(b.x,b.y,"#9ff",4,90);if(e.hp<=0)killEnemy(e);break}}}}
+ bullets=bullets.filter(b=>b.life>0&&b.x>-80&&b.x<W+80&&b.y>-80&&b.y<H+80);enemies=enemies.filter(e=>e.hp>0);
+ for(let o of orbs){let a=Math.atan2(player.y-o.y,player.x-o.x),d=dist(o,player);if(d<140){o.x+=Math.cos(a)*400*dt;o.y+=Math.sin(a)*400*dt}if(d<22){player.hp=Math.min(player.maxHp,player.hp+8);o.dead=true;floating(o.x,o.y,"+8 HP","#6ff")}}orbs=orbs.filter(o=>!o.dead);
+ for(let l of lasers)l.life-=dt;lasers=lasers.filter(l=>l.life>0);
+ for(let fx of explosionFx){fx.life-=dt;fx.r=fx.maxR*(1-fx.life/fx.max)}
+ explosionFx=explosionFx.filter(fx=>fx.life>0);
+ for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt}particles=particles.filter(p=>p.life>0);
+ for(let x of texts){x.y-=30*dt;x.life-=dt}texts=texts.filter(x=>x.life>0);
+ shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt);
+ if(!bossDeathPending&&waveActive&&spawnLeft===0&&enemies.length===0){waveActive=false;victoryWave();}
+ const bombBtn=document.getElementById("dashBtn");
+ if(bombBtn){if(player.bombCd>0){bombBtn.classList.add("cooling");bombBtn.dataset.cd=player.bombCd.toFixed(1)+"s";bombBtn.style.opacity=".62"}else{bombBtn.classList.remove("cooling");bombBtn.dataset.cd="";bombBtn.style.opacity="1"}}
+ refreshPlayerHud();stats.innerHTML=yellowNumbers(`ウェーブ ${wave}　ポイント ${score}　シールド ${Math.ceil(player.shield)}/${player.maxShield}　${BIOMES[biome].sub}　×${mult.toFixed(1)}　🎮 ${getPad()?"ON":"OFF"}`);if(boss)bossfill.style.width=(boss.hp/boss.maxHp*100)+"%";
+}
+const BIOMES=[
+ {name:"ABYSSAL OCEAN",sub:"深海領域"},
+ {name:"EMERALD FOREST",sub:"原生森林"},
+ {name:"DEEP SPACE",sub:"宇宙空間"}
+];
+function grid(){
+ bgTime+=.008;
+ const b=biome%3;
+ // Entire battlefield is drawn as a direct overhead surface to match the top-down characters.
+ if(b===0){
+  // Flooded concrete / wet city floor viewed straight down.
+  ctx.fillStyle="#173c45";ctx.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=72)for(let x=0;x<W;x+=72){
+   let k=((x/72+y/72)|0)%2;ctx.fillStyle=k?"#1b4650":"#153942";ctx.fillRect(x,y,70,70);
+  }
+  ctx.strokeStyle="rgba(104,190,197,.18)";ctx.lineWidth=2;
+  for(let y=36;y<H;y+=144){ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(W*.25,y+14,W*.65,y-16,W,y+5);ctx.stroke()}
+  // puddles, drains and scattered debris
+  for(let i=0;i<22;i++){let x=(i*173+43)%W,y=(i*97+61)%H,rx=18+(i%5)*9,ry=8+(i%4)*5;
+   ctx.fillStyle="rgba(39,117,132,.28)";ctx.beginPath();ctx.ellipse(x,y,rx,ry,(i%7)*.35,0,TAU);ctx.fill()}
+  ctx.strokeStyle="#0b252c";ctx.lineWidth=4;
+  for(let i=0;i<9;i++){let x=(i*257+90)%W,y=(i*139+120)%H;ctx.beginPath();ctx.arc(x,y,13,0,TAU);ctx.stroke();
+   ctx.lineWidth=1;for(let q=0;q<4;q++){ctx.beginPath();ctx.moveTo(x-9,y-6+q*4);ctx.lineTo(x+9,y-6+q*4);ctx.stroke()}ctx.lineWidth=4}
+ }else if(b===1){
+  // Forest floor from directly above: dirt, grass patches, stones and tree crowns.
+  ctx.fillStyle="#1d3922";ctx.fillRect(0,0,W,H);
+  for(let i=0;i<95;i++){let x=(i*137+29)%W,y=(i*83+17)%H,r=10+(i%7)*5;
+   ctx.fillStyle=i%3===0?"#294b29":i%3===1?"#244328":"#18351f";ctx.beginPath();ctx.ellipse(x,y,r,r*.55,(i%8)*.4,0,TAU);ctx.fill()}
+  // dirt paths
+  ctx.strokeStyle="#5b5335";ctx.lineWidth=58;ctx.globalAlpha=.48;ctx.beginPath();ctx.moveTo(-60,H*.25);ctx.bezierCurveTo(W*.28,H*.1,W*.52,H*.72,W+80,H*.55);ctx.stroke();ctx.globalAlpha=1;
+  for(let i=0;i<20;i++){let x=(i*211+70)%W,y=(i*157+40)%H,r=14+(i%5)*5;
+   ctx.fillStyle="#20341d";ctx.beginPath();ctx.arc(x,y,r+8,0,TAU);ctx.fill();ctx.fillStyle="#38623a";ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();
+   ctx.fillStyle="#58734a";ctx.beginPath();ctx.arc(x-r*.25,y-r*.25,r*.45,0,TAU);ctx.fill()}
+  for(let i=0;i<28;i++){let x=(i*181+13)%W,y=(i*109+37)%H;ctx.fillStyle="#6a6d57";ctx.beginPath();ctx.ellipse(x,y,5+i%6,3+i%4,(i%5)*.4,0,TAU);ctx.fill()}
+ }else{
+  // Space-station deck / lunar facility floor from directly overhead.
+  ctx.fillStyle="#101522";ctx.fillRect(0,0,W,H);
+  const tile=80;
+  for(let y=0;y<H;y+=tile)for(let x=0;x<W;x+=tile){
+   ctx.fillStyle=((x/tile+y/tile)|0)%2?"#141c2b":"#111827";ctx.fillRect(x+2,y+2,tile-4,tile-4);
+   ctx.strokeStyle="rgba(92,137,181,.20)";ctx.lineWidth=1;ctx.strokeRect(x+5,y+5,tile-10,tile-10);
+  }
+  // overhead pipes / hazard panels
+  ctx.strokeStyle="#314b62";ctx.lineWidth=10;
+  ctx.beginPath();ctx.moveTo(0,105);ctx.lineTo(W,105);ctx.moveTo(0,H-92);ctx.lineTo(W,H-92);ctx.stroke();
+  for(let i=0;i<12;i++){let x=(i*131+55)%W,y=(i*193+77)%H;
+   ctx.fillStyle="#222c3b";ctx.strokeStyle="#52687b";ctx.lineWidth=2;ctx.fillRect(x-18,y-13,36,26);ctx.strokeRect(x-18,y-13,36,26);
+   ctx.fillStyle="#5bd9e8";ctx.globalAlpha=.45;ctx.fillRect(x-11,y-4,22,3);ctx.globalAlpha=1}
+  ctx.strokeStyle="rgba(255,196,65,.28)";ctx.lineWidth=5;
+  for(let x=-80;x<W;x+=220){ctx.beginPath();ctx.moveTo(x,H*.48);ctx.lineTo(x+80,H*.48);ctx.stroke()}
+ }
+ // subtle top-down navigation grid
+ ctx.globalAlpha=.055;ctx.strokeStyle="#d4f6ff";ctx.lineWidth=1;
+ for(let x=0;x<W;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+ for(let y=0;y<H;y+=64){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.globalAlpha=1;
+}
+function cinematicDepth(){
+ // Top-down mode intentionally has no horizon, sky, foreground trunks or side-view depth layers.
+}
+function draw(){
+ ctx.save();if(shake)ctx.translate(rnd(-shake,shake),rnd(-shake,shake));ctx.fillStyle="#030711";ctx.fillRect(-30,-30,W+60,H+60);grid();cinematicDepth();
+ if(!player){ctx.restore();return;}
+ let g=ctx.createRadialGradient(player.x,player.y,10,player.x,player.y,250);g.addColorStop(0,"#123b4b66");g.addColorStop(1,"#0000");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let o of orbs){ctx.shadowBlur=18;ctx.shadowColor="#5ff";ctx.fillStyle="#7ff";ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,TAU);ctx.fill()}
+ // Muzzle energy bloom: visually connects the plasma pulses to the craft.
+ if(lasers.length){
+  let mx=player.x+Math.cos(player.angle)*23,my=player.y+Math.sin(player.angle)*23;
+  let mg=ctx.createRadialGradient(mx,my,1,mx,my,24);
+  mg.addColorStop(0,"#ffffff");mg.addColorStop(.28,"#d9ffc8");mg.addColorStop(.62,"#54e83f99");mg.addColorStop(1,"#32d62b00");
+  ctx.fillStyle=mg;ctx.beginPath();ctx.arc(mx,my,24,0,TAU);ctx.fill();
+ }
+ for(let l of lasers){
+  let a=Math.max(0,l.life/l.max);
+  let dx=l.x2-l.x1,dy=l.y2-l.y1,len=Math.hypot(dx,dy);
+  if(len>0){
+   let ux=dx/len,uy=dy/len;
+   // Rounded plasma capsules: short glowing energy pulses with soft round ends.
+   const visibleLen=34,gapLen=22,step=visibleLen+gapLen;
+   ctx.save();ctx.globalAlpha=a;ctx.lineCap="round";
+   for(let d=0;d<len;d+=step){
+    let d2=Math.min(d+visibleLen,len);
+    let sx=l.x1+ux*d,sy=l.y1+uy*d,ex=l.x1+ux*d2,ey=l.y1+uy*d2;
+    ctx.shadowBlur=22;ctx.shadowColor="#45ff38";ctx.strokeStyle="#55e847";ctx.lineWidth=18;
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.shadowBlur=10;ctx.strokeStyle="#c7ffb7";ctx.lineWidth=11;
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.shadowBlur=4;ctx.strokeStyle="#ffffff";ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+   }
+   ctx.restore();
+  }
+ }
+ for(let b of bullets){ctx.shadowBlur=14;ctx.shadowColor=b.enemy?"#ff477e":"#66eeff";ctx.fillStyle=b.enemy?"#ff6b94":"#c8ffff";ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}
+ for(let e of enemies){
+ ctx.save();ctx.translate(e.x,e.y);
+ if(e.elite){ctx.save();ctx.globalAlpha=.75;ctx.strokeStyle="#ffd85a";ctx.shadowBlur=24;ctx.shadowColor="#ffb300";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,e.r+8+Math.sin(performance.now()*.006)*3,0,TAU);ctx.stroke();ctx.restore()}
+ if(e.type==="boss"){
+  // Giant mutant zombie boss
+  const tt=performance.now()*.003;
+  ctx.rotate(Math.sin(tt)*.08);
+  ctx.shadowBlur=28;ctx.shadowColor="#ff477e";
+  ctx.fillStyle="#27382b";ctx.strokeStyle="#ff7c91";ctx.lineWidth=3;
+  ctx.beginPath();ctx.ellipse(0,8,e.r*.58,e.r*.76,0,0,TAU);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#8fa96f";ctx.beginPath();ctx.arc(0,-e.r*.58,e.r*.34,0,TAU);ctx.fill();ctx.stroke();
+  // arms
+  ctx.strokeStyle="#70885d";ctx.lineWidth=13;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(-e.r*.42,-5);ctx.lineTo(-e.r*.92,12+Math.sin(tt*3)*7);ctx.moveTo(e.r*.42,-5);ctx.lineTo(e.r*.92,12-Math.sin(tt*3)*7);ctx.stroke();
+  // face
+  ctx.shadowBlur=10;ctx.shadowColor="#ff263f";ctx.fillStyle="#ff334d";
+  ctx.beginPath();ctx.arc(-10,-e.r*.61,5,0,TAU);ctx.arc(10,-e.r*.61,5,0,TAU);ctx.fill();
+  ctx.strokeStyle="#17120f";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-11,-e.r*.45);ctx.lineTo(11,-e.r*.43);ctx.stroke();
+ }else{
+  // Top-down infected torso: deliberately NO visible arms or legs.
+  // Movement is communicated by body bob, shadow compression and forward lean, not insect-like limbs.
+  const enemyColor={tank:"#ff9d38",shooter:"#b66cff",dasher:"#ff496f",splitter:"#f1d44f",orbiter:"#42eaa2",sniper:"#ff70d7",healer:"#76ef62",chaser:"#4fd9e8"};
+  const c=enemyColor[e.type]||"#4fd9e8",tt=performance.now()*.006+(e.phase||0);
+  ctx.rotate(Math.atan2(player.y-e.y,player.x-e.x));
+  const pace=e.type==="dasher"?10:e.type==="tank"?4.5:6.5,bob=Math.abs(Math.sin(tt*pace))*2.2,lean=Math.sin(tt*pace)*1.2;
+  // Ground shadow anchors the enemy to the floor so it reads as walking/running rather than swimming.
+  ctx.save();ctx.translate(-3+bob*.35,3);ctx.scale(1-.08*bob/2.2,1+.05*bob/2.2);
+  ctx.shadowBlur=0;ctx.fillStyle="rgba(0,0,0,.42)";ctx.beginPath();ctx.ellipse(-3,0,e.r*.72,e.r*.52,0,0,TAU);ctx.fill();ctx.restore();
+  ctx.translate(bob*.65,lean*.22);
+  ctx.shadowBlur=e.elite?20:7;ctx.shadowColor=e.elite?"#ffd85a":c;
+  // Compact jacket/torso only — no limb strokes.
+  ctx.fillStyle="#242b2f";ctx.strokeStyle=c;ctx.lineWidth=e.elite?2.6:1.8;
+  ctx.beginPath();
+  ctx.moveTo(e.r*.24,0);ctx.quadraticCurveTo(e.r*.08,-e.r*.62,-e.r*.34,-e.r*.54);
+  ctx.lineTo(-e.r*.62,-e.r*.24);ctx.lineTo(-e.r*.62,e.r*.24);
+  ctx.quadraticCurveTo(-e.r*.28,e.r*.62,e.r*.10,e.r*.55);ctx.closePath();ctx.fill();ctx.stroke();
+  // Shoulder pads keep a humanoid torso shape without drawing arms.
+  ctx.fillStyle="#394247";ctx.beginPath();ctx.ellipse(-e.r*.06,-e.r*.48,e.r*.28,e.r*.16,0,0,TAU);ctx.ellipse(-e.r*.06,e.r*.48,e.r*.28,e.r*.16,0,0,TAU);ctx.fill();
+  // Head at front.
+  ctx.fillStyle=e.elite?"#c9bd73":"#818d79";ctx.strokeStyle="#cbd6bd";ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.arc(e.r*.47,0,e.r*.31,0,TAU);ctx.fill();ctx.stroke();
+  // Face points in travel direction.
+  ctx.fillStyle=e.elite?"#fff16b":"#ff4558";ctx.shadowBlur=7;ctx.shadowColor=ctx.fillStyle;
+  ctx.beginPath();ctx.arc(e.r*.63,-3,1.8,0,TAU);ctx.arc(e.r*.63,3,1.8,0,TAU);ctx.fill();
+  // Chest light identifies enemy class.
+  ctx.fillStyle=c;ctx.shadowBlur=9;ctx.shadowColor=c;ctx.beginPath();ctx.arc(-e.r*.12,0,e.r*.14,0,TAU);ctx.fill();
+  // A short rhythmic forward bob plus dust puffs visually implies footsteps.
+  ctx.shadowBlur=0;
+  if(Math.sin(tt*pace)>.88){
+    ctx.fillStyle="rgba(190,205,185,.22)";
+    ctx.beginPath();ctx.arc(-e.r*.72,-e.r*.22,3.2,0,TAU);ctx.arc(-e.r*.68,e.r*.22,2.6,0,TAU);ctx.fill();
+  }
+  // Compact type markings only; nothing protrudes like insect legs.
+  if(e.type==="tank"){ctx.strokeStyle=c;ctx.lineWidth=4;ctx.beginPath();ctx.arc(-e.r*.08,0,e.r*.58,-1.0,1.0);ctx.stroke()}
+  if(e.type==="shooter"||e.type==="sniper"){ctx.fillStyle=c;ctx.fillRect(-e.r*.42,-3,e.r*.24,6)}
+  if(e.type==="healer"){ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(-e.r*.12,0,e.r*.67,0,TAU);ctx.stroke()}
+  ctx.shadowBlur=0;
+ } ctx.restore()
+}
+ ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);
+ // Distinct top-down survivor: sleek armored hunter, visually separate from zombies.
+ const inv=player.inv>0,dual=player.shots>=6;
+ // barrier halo
+ if(player.barrier>0){ctx.save();ctx.rotate(-player.angle);ctx.strokeStyle="rgba(80,225,255,.78)";ctx.shadowBlur=18;ctx.shadowColor="#55eaff";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,28+Math.sin(performance.now()*.008)*2,0,TAU);ctx.stroke();ctx.restore()}
+ // angular cape/back armor
+ ctx.shadowBlur=inv?24:12;ctx.shadowColor=inv?"#fff":"#ff9e38";
+ ctx.fillStyle="#132d4b";ctx.strokeStyle="#4fc7ff";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(-23,0);ctx.lineTo(-8,-15);ctx.lineTo(2,-10);ctx.lineTo(2,10);ctx.lineTo(-8,15);ctx.closePath();ctx.fill();ctx.stroke();
+ // orange-black tactical body
+ ctx.fillStyle=inv?"#fff":"#e56f24";ctx.strokeStyle="#ffd477";ctx.lineWidth=2.4;
+ ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(2,-13);ctx.lineTo(-10,-10);ctx.lineTo(-14,0);ctx.lineTo(-10,10);ctx.lineTo(2,13);ctx.closePath();ctx.fill();ctx.stroke();
+ // helmet with blue visor
+ ctx.fillStyle="#e9f2f4";ctx.strokeStyle="#74dcff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(9,0,9,0,TAU);ctx.fill();ctx.stroke();
+ ctx.fillStyle="#0c79a9";ctx.shadowBlur=8;ctx.shadowColor="#57dfff";ctx.beginPath();ctx.ellipse(14,0,5,7,0,0,TAU);ctx.fill();
+ // FRONT ARM: one hand, one gun
+ ctx.shadowBlur=0;ctx.strokeStyle="#f0b16f";ctx.lineWidth=5.5;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(2,-8);ctx.lineTo(16,-5);ctx.stroke();
+ ctx.strokeStyle="#111a20";ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(13,-5);ctx.lineTo(39,-5);ctx.stroke();
+ ctx.strokeStyle="#72ff72";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(18,-5);ctx.lineTo(40,-5);ctx.stroke();
+ ctx.fillStyle="#baffad";ctx.shadowBlur=12;ctx.shadowColor="#6dff5c";ctx.beginPath();ctx.arc(41,-5,2.6,0,TAU);ctx.fill();
+ // From the 6th laser onward, the other hand carries a second gun aimed backward.
+ if(dual){
+  ctx.shadowBlur=0;ctx.strokeStyle="#f0b16f";ctx.lineWidth=5.5;ctx.beginPath();ctx.moveTo(-3,8);ctx.lineTo(-15,6);ctx.stroke();
+  ctx.strokeStyle="#111a20";ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(-12,6);ctx.lineTo(-39,6);ctx.stroke();
+  ctx.strokeStyle="#72ff72";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-17,6);ctx.lineTo(-40,6);ctx.stroke();
+  ctx.fillStyle="#baffad";ctx.shadowBlur=12;ctx.shadowColor="#6dff5c";ctx.beginPath();ctx.arc(-41,6,2.6,0,TAU);ctx.fill();
+ }
+ // strong player identification chevrons
+ ctx.shadowBlur=0;ctx.strokeStyle="rgba(94,220,255,.8)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,-22);ctx.lineTo(0,-27);ctx.lineTo(7,-22);ctx.stroke();
+ ctx.globalAlpha=1;ctx.restore();
+ // Explosion laser shockwaves: clearly visible rings whose size changes by level.
+ for(let fx of explosionFx){
+  let k=Math.max(0,fx.life/fx.max),a=.72*k;
+  ctx.save();ctx.globalAlpha=a;ctx.lineCap="round";
+  ctx.strokeStyle=fx.level===3?"#efff83":fx.level===2?"#9dff68":"#65ff58";
+  ctx.shadowBlur=18+fx.level*7;ctx.shadowColor=ctx.strokeStyle;
+  ctx.lineWidth=3+fx.level*2;
+  ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r,0,TAU);ctx.stroke();
+  if(fx.level>=2){ctx.globalAlpha=a*.45;ctx.lineWidth=2;ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*.66,0,TAU);ctx.stroke()}
+  if(fx.level>=3){ctx.globalAlpha=a*.28;ctx.fillStyle="#cfff73";ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*.36,0,TAU);ctx.fill()}
+  ctx.restore();
+ }
+ ctx.shadowBlur=0;for(let p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size)}ctx.globalAlpha=1;for(let x of texts){ctx.globalAlpha=x.life;ctx.fillStyle=x.color;ctx.font="bold 18px system-ui";ctx.fillText(x.text,x.x,x.y)}ctx.globalAlpha=1;
+ if(flash){ctx.fillStyle=`rgba(255,50,90,${flash*1.5})`;ctx.fillRect(0,0,W,H)}ctx.restore();
+}
+function loop(ts){
+ let dt=Math.min(.033,(ts-last)/1000||0);last=ts;
+ if(running&&!paused){
+  // Multiple normal-sized simulation steps keep collision/movement stable at 2x and 4x.
+  for(let i=0;i<gameSpeed;i++)update(dt);
+ }
+ draw();requestAnimationFrame(loop)
+}
+function togglePause(){if(!running)return;paused=!paused;if(paused){overlay.style.display="grid";panel.innerHTML='<div class="logo" style="font-size:38px">PAUSED</div><p>ゲームを一時停止しています</p><button id="resume">▶ RESUME</button>';document.getElementById("resume").onclick=togglePause}else overlay.style.display="none"}
+bindTitle();
+wrap.addEventListener("pointerdown",restoreGameFocus);
+document.getElementById("touchUI").addEventListener("pointerdown",restoreGameFocus);
+
+wrap.addEventListener("mousemove",e=>{let r=cv.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*W;mouse.y=(e.clientY-r.top)/r.height*H;if(player)player.angle=Math.atan2(mouse.y-player.y,mouse.x-player.x)});
+wrap.addEventListener("mousedown",e=>{if(e.target!==cv)return;mouse.down=true;wrap.focus()});addEventListener("mouseup",()=>mouse.down=false);
+wrap.addEventListener("keydown",e=>{keys[e.code]=true;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code))e.preventDefault();if(e.code==="Space"&&!e.repeat)bomb();if(e.code==="KeyP"&&!e.repeat)togglePause()});
+wrap.addEventListener("keyup",e=>keys[e.code]=false);
+
+
+let audioCtx=null,musicGain=null,musicTimer=null,musicStep=0,masterVolume=.35;
+function initAudio(){
+ try{
+ if(audioCtx){if(audioCtx.state==="suspended")audioCtx.resume();return}
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ audioCtx=new AC();
+ musicGain=audioCtx.createGain();musicGain.gain.value=masterVolume*.18;musicGain.connect(audioCtx.destination);
+ musicTimer=setInterval(playMusicStep,260);
+ }catch(err){audioCtx=null;}
+}
+function tone(freq,dur=.16,type="sine",gain=.06){
+ if(!audioCtx)return;let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;
+ g.gain.setValueAtTime(gain*masterVolume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);
+ o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);
+}
+function playMusicStep(){
+ if(!audioCtx||paused||!running)return;
+ const sets=[[110,165,220,247],[98,147,196,220],[82,123,164,247]],notes=sets[biome%3],f=notes[musicStep%notes.length];
+ let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=biome===2?"triangle":"sine";o.frequency.value=f*(musicStep%8===4?2:1);
+ g.gain.setValueAtTime(masterVolume*.035,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.22);
+ o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.23);musicStep++;
+}
+document.addEventListener("pointerdown",initAudio,{once:true});
+document.addEventListener("keydown",initAudio,{once:true});
+document.getElementById("volume").addEventListener("input",e=>{masterVolume=Number(e.target.value)/100;if(musicGain)musicGain.gain.value=masterVolume*.18});
+
+function setupStick(id,target,isAim){
+ const zone=document.getElementById(id),knob=zone.querySelector(".knob");
+ let pid=null;
+ function update(e){
+  const r=zone.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*.58;
+  let dx=e.clientX-cx,dy=e.clientY-cy,max=28,l=Math.hypot(dx,dy);
+  if(l>max){dx=dx/l*max;dy=dy/l*max;l=max}
+  let nx=dx/max,ny=dy/max,mag=Math.hypot(nx,ny);
+  if(mag<.002){nx=ny=0}else{let out=Math.min(1,(mag-.002)/.998),sc=Math.pow(out,.42)/(mag||1);nx*=sc;ny*=sc}
+  target.x=nx;target.y=ny;if(isAim)target.active=true;
+  knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+ }
+ zone.addEventListener("pointerdown",e=>{pid=e.pointerId;zone.setPointerCapture(pid);update(e);e.preventDefault()});
+ zone.addEventListener("pointermove",e=>{if(e.pointerId===pid)update(e)});
+ function end(e){if(e.pointerId!==pid)return;pid=null;target.x=target.y=0;if(isAim)target.active=false;knob.style.transform="translate(-50%,-50%)"}
+ zone.addEventListener("pointerup",end);zone.addEventListener("pointercancel",end);zone.addEventListener("lostpointercapture",end);
+}
+setupStick("moveZone",touchMove,false);setupStick("aimZone",touchAim,true);
+document.getElementById("dashBtn").addEventListener("pointerdown",e=>{e.preventDefault();if(running&&!paused)bomb()});
+document.getElementById("pauseBtn").addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ if(!running)return;
+ touchMove.x=touchMove.y=touchAim.x=touchAim.y=0;touchAim.active=false;
+ togglePause();
+});
+
+
+// Game speed controls: 1x / 2x / 4x.
+document.querySelectorAll(".speedBtn").forEach(btn=>{
+ const changeSpeed=e=>{
+  e.preventDefault();e.stopPropagation();
+  mouse.down=false;touchAim.active=false;touchAim.x=touchAim.y=0;
+  gameSpeed=Number(btn.dataset.speed)||1;
+  document.querySelectorAll(".speedBtn").forEach(b=>b.classList.toggle("active",b===btn));
+  message("GAME SPEED ×"+gameSpeed,.8);
+ };
+ btn.addEventListener("pointerdown",changeSpeed);
+ btn.addEventListener("mousedown",e=>e.stopPropagation());
+ btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation()});
+});
+requestAnimationFrame(loop);
+
+window.addEventListener("gamepadconnected",e=>{
+ const el=document.getElementById("padstate");
+ if(el) el.textContent="接続済み: "+e.gamepad.id+"　Aボタンで開始";
+});
+let menuPadPrev=false;
+function titlePadLoop(){
+ const g=getPad();
+ if(!running && overlay.style.display!=="none" && g){
+   const a=!!g.buttons[0]?.pressed;
+   if(a&&!menuPadPrev){
+     const start=document.getElementById("start"),again=document.getElementById("again"),resume=document.getElementById("resume");
+     if(start) start.click(); else if(again) again.click(); else if(resume) resume.click();
+   }
+   menuPadPrev=a;
+ } else menuPadPrev=false;
+ requestAnimationFrame(titlePadLoop);
+}
+requestAnimationFrame(titlePadLoop);
+
+</script>
+</body></html>
+<style>
+.powerMeters{grid-template-columns:repeat(3,minmax(110px,1fr))!important}
+@media(max-width:700px){.powerMeters{grid-template-columns:repeat(3,minmax(80px,1fr))!important}}
+
+/* V64 FINAL responsive override — placed last on purpose */
+@media (orientation:portrait) and (max-width:900px){
+  html,body{height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  body{display:block!important}
+  #wrap{
+    width:100vw!important;height:100dvh!important;max-height:none!important;
+    display:grid!important;grid-template-rows:minmax(0,1fr) 250px!important;
+    overflow:hidden!important;
+  }
+  canvas#game{
+    position:relative!important;grid-row:1!important;
+    display:block!important;width:100vw!important;height:100%!important;
+    min-height:0!important;max-height:none!important;margin:0!important;
+    object-fit:fill!important;
+  }
+  #touchUI{
+    position:relative!important;grid-row:2!important;left:auto!important;right:auto!important;
+    bottom:auto!important;top:auto!important;width:100%!important;height:250px!important;
+    min-height:250px!important;display:block!important;visibility:visible!important;
+    overflow:hidden!important;z-index:500!important;
+  }
+  #controlStatus{height:48px!important;padding:4px 8px!important}
+  .powerMeters{height:64px!important;padding:0 8px!important}
+  .stickZone{
+    display:block!important;visibility:visible!important;top:116px!important;height:128px!important;
+    width:31%!important;z-index:900!important;
+  }
+  .stickZone .ring{width:92px!important;height:92px!important;top:50%!important}
+  .stickZone .knob{width:42px!important;height:42px!important;top:50%!important}
+  #pauseBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:116px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;width:50px!important;height:36px!important;z-index:2400!important;
+  }
+  #dashBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:164px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;width:74px!important;height:74px!important;z-index:2200!important;
+  }
+  #speedCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% - 168px)!important;top:174px!important;bottom:auto!important;
+    transform:none!important;width:128px!important;height:38px!important;
+    align-items:center!important;justify-content:center!important;gap:4px!important;z-index:2400!important;
+  }
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:38px!important;min-width:38px!important;height:34px!important;padding:0!important}
+  #soundCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% + 92px)!important;right:auto!important;top:178px!important;bottom:auto!important;
+    transform:none!important;width:126px!important;align-items:center!important;gap:4px!important;z-index:2400!important;
+  }
+  #volume{width:72px!important}
+}
+/* Landscape: three non-overlapping center lanes: speed | NOVA | sound */
+@media (orientation:landscape){
+  #speedCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% - 190px)!important;top:116px!important;bottom:auto!important;
+    transform:none!important;width:132px!important;height:38px!important;
+    align-items:center!important;justify-content:center!important;gap:4px!important;z-index:2600!important;
+  }
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:38px!important;min-width:38px!important;height:34px!important;padding:0!important}
+  #dashBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:96px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;width:78px!important;height:78px!important;z-index:2300!important;
+  }
+  #pauseBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:61px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;z-index:2700!important;
+  }
+  #soundCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% + 105px)!important;right:auto!important;top:119px!important;bottom:auto!important;
+    transform:none!important;width:130px!important;z-index:2600!important;
+  }
+  #volume{width:76px!important}
+}
+
+/* V65 — aspect-ratio based phone layout; MUST remain last */
+@media (max-aspect-ratio: 4/5){
+  html,body{height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  body{display:block!important}
+  #wrap{
+    position:relative!important;width:100vw!important;height:100dvh!important;max-height:none!important;
+    display:grid!important;grid-template-rows:minmax(0,1fr) 260px!important;overflow:hidden!important;
+  }
+  canvas#game{
+    grid-row:1!important;position:relative!important;display:block!important;
+    width:100vw!important;height:100%!important;min-height:0!important;max-height:none!important;
+    margin:0!important;object-fit:fill!important;
+  }
+  #touchUI{
+    grid-row:2!important;position:relative!important;display:block!important;visibility:visible!important;
+    opacity:1!important;left:0!important;right:0!important;top:auto!important;bottom:auto!important;
+    width:100vw!important;height:260px!important;min-height:260px!important;overflow:hidden!important;
+    z-index:5000!important;background:#03101bf5!important;
+  }
+  #controlStatus{display:grid!important;visibility:visible!important;height:48px!important;padding:4px 8px!important}
+  .powerMeters{display:grid!important;visibility:visible!important;height:66px!important;padding:0 8px!important}
+  .stickZone{display:block!important;visibility:visible!important;opacity:1!important;top:120px!important;height:132px!important;width:31%!important;z-index:5200!important}
+  .stickZone .ring{width:94px!important;height:94px!important;top:50%!important}
+  .stickZone .knob{width:42px!important;height:42px!important;top:50%!important}
+  #dashBtn{display:flex!important;visibility:visible!important;opacity:1!important;left:50%!important;top:172px!important;bottom:auto!important;transform:translateX(-50%)!important;width:74px!important;height:74px!important;z-index:5500!important}
+  #speedCtl{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:calc(50% - 174px)!important;top:180px!important;bottom:auto!important;transform:none!important;width:132px!important;height:38px!important;align-items:center!important;justify-content:center!important;gap:4px!important;z-index:5600!important}
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:38px!important;min-width:38px!important;height:34px!important;padding:0!important}
+  #soundCtl{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:calc(50% + 92px)!important;right:auto!important;top:178px!important;bottom:auto!important;transform:none!important;width:128px!important;z-index:5600!important}
+  #volume{width:72px!important}
+  #pauseBtn{display:flex!important;visibility:visible!important;opacity:1!important;left:calc(50% + 132px)!important;top:211px!important;bottom:auto!important;transform:translateX(-50%)!important;width:48px!important;height:32px!important;z-index:5700!important}
+}
+/* V65 landscape: NOVA lower than meter rows; pause directly under volume */
+@media (min-aspect-ratio: 5/4){
+  #dashBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:128px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;width:72px!important;height:72px!important;z-index:2300!important;
+  }
+  #speedCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% - 190px)!important;top:130px!important;bottom:auto!important;
+    transform:none!important;width:132px!important;z-index:2600!important;
+  }
+  #speedCtl>span{display:none!important}
+  #soundCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:calc(50% + 108px)!important;right:auto!important;top:128px!important;bottom:auto!important;
+    transform:none!important;width:132px!important;z-index:2600!important;
+  }
+  #pauseBtn{
+    display:flex!important;visibility:visible!important;left:calc(50% + 150px)!important;top:158px!important;
+    bottom:auto!important;transform:translateX(-50%)!important;width:48px!important;height:30px!important;z-index:2700!important;
+  }
+}
+
+/* V66 — structural mobile fix: #touchUI is a SIBLING of #wrap, not a child.
+   Therefore size BODY as game + controls. This block intentionally comes last. */
+@media (max-aspect-ratio:4/5){
+  html,body{margin:0!important;width:100%!important;height:100dvh!important;overflow:hidden!important}
+  body{
+    display:grid!important;
+    grid-template-rows:minmax(0,1fr) 270px!important;
+    grid-template-columns:100%!important;
+    align-items:stretch!important;justify-items:stretch!important;
+  }
+  #wrap{
+    grid-row:1!important;position:relative!important;
+    width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+    aspect-ratio:auto!important;overflow:hidden!important;margin:0!important;
+  }
+  canvas#game{
+    display:block!important;width:100%!important;height:100%!important;
+    min-height:0!important;max-height:none!important;object-fit:fill!important;margin:0!important;
+  }
+  #touchUI{
+    grid-row:2!important;position:relative!important;
+    display:block!important;visibility:visible!important;opacity:1!important;
+    width:100%!important;height:270px!important;min-height:270px!important;
+    left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+    overflow:hidden!important;z-index:5000!important;background:#03101bf5!important;
+  }
+  #controlStatus{display:grid!important;height:52px!important;padding:4px 8px!important}
+  .powerMeters{display:grid!important;height:68px!important;padding:0 8px!important}
+  .stickZone{display:block!important;visibility:visible!important;top:124px!important;height:140px!important;width:31%!important;z-index:5100!important}
+  #moveZone{left:1%!important} #aimZone{right:1%!important}
+  .stickZone .ring{width:96px!important;height:96px!important;top:50%!important}
+  .stickZone .knob{width:44px!important;height:44px!important;top:50%!important}
+  #dashBtn{display:flex!important;visibility:visible!important;left:50%!important;top:181px!important;bottom:auto!important;transform:translateX(-50%)!important;width:76px!important;height:76px!important;z-index:5500!important}
+  #speedCtl{display:flex!important;visibility:visible!important;left:calc(50% - 176px)!important;top:190px!important;bottom:auto!important;transform:none!important;width:132px!important;height:36px!important;gap:4px!important;z-index:5600!important}
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:38px!important;min-width:38px!important;height:34px!important;padding:0!important}
+  #soundCtl{display:flex!important;visibility:visible!important;left:calc(50% + 94px)!important;right:auto!important;top:184px!important;bottom:auto!important;transform:none!important;width:130px!important;z-index:5600!important}
+  #volume{width:72px!important}
+  #pauseBtn{display:flex!important;visibility:visible!important;left:calc(50% + 135px)!important;top:220px!important;bottom:auto!important;transform:translateX(-50%)!important;width:48px!important;height:32px!important;z-index:5700!important}
+}
+/* Phone/tablet landscape: dedicate 220px to controls, so NOVA cannot overlap meters.
+   Pause is directly below the volume control. */
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+  html,body{margin:0!important;width:100%!important;height:100dvh!important;overflow:hidden!important}
+  body{
+    display:grid!important;
+    grid-template-rows:minmax(0,1fr) 220px!important;
+    grid-template-columns:100%!important;
+    align-items:stretch!important;justify-items:stretch!important;
+  }
+  #wrap{
+    grid-row:1!important;position:relative!important;width:100%!important;height:100%!important;
+    min-height:0!important;max-height:none!important;aspect-ratio:auto!important;overflow:hidden!important;margin:0!important;
+  }
+  canvas#game{display:block!important;width:100%!important;height:100%!important;max-height:none!important;object-fit:fill!important;margin:0!important}
+  #touchUI{
+    grid-row:2!important;position:relative!important;display:block!important;visibility:visible!important;
+    width:100%!important;height:220px!important;min-height:220px!important;left:auto!important;right:auto!important;
+    top:auto!important;bottom:auto!important;overflow:hidden!important;z-index:5000!important;
+  }
+  #controlStatus{height:48px!important;padding:4px 12px!important}
+  .powerMeters{height:66px!important;padding:0 12px!important}
+  .stickZone{display:block!important;visibility:visible!important;top:112px!important;height:104px!important;width:31%!important}
+  .stickZone .ring{width:82px!important;height:82px!important}
+  .stickZone .knob{width:38px!important;height:38px!important}
+  #dashBtn{display:flex!important;visibility:visible!important;left:50%!important;top:137px!important;bottom:auto!important;transform:translateX(-50%)!important;width:72px!important;height:72px!important;z-index:5500!important}
+  #speedCtl{display:flex!important;visibility:visible!important;left:calc(50% - 195px)!important;top:151px!important;bottom:auto!important;transform:none!important;width:132px!important;height:36px!important;z-index:5600!important}
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:38px!important;min-width:38px!important;height:34px!important;padding:0!important}
+  #soundCtl{display:flex!important;visibility:visible!important;left:calc(50% + 108px)!important;right:auto!important;top:137px!important;bottom:auto!important;transform:none!important;width:136px!important;z-index:5600!important}
+  #volume{width:78px!important}
+  #pauseBtn{display:flex!important;visibility:visible!important;left:calc(50% + 150px)!important;top:171px!important;bottom:auto!important;transform:translateX(-50%)!important;width:48px!important;height:32px!important;z-index:5700!important}
+}
+
+/* V67 — clean control board: no center pile-up */
+@media (max-aspect-ratio:4/5){
+  html,body{height:100dvh!important;overflow:hidden!important}
+  body{display:grid!important;grid-template-rows:minmax(0,1fr) 225px!important}
+  #wrap{grid-row:1!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important}
+  canvas#game{width:100%!important;height:100%!important;object-fit:fill!important;max-height:none!important}
+  #touchUI{
+    grid-row:2!important;position:relative!important;width:100%!important;height:225px!important;min-height:225px!important;
+    display:block!important;visibility:visible!important;overflow:hidden!important;background:#03101bf5!important;
+  }
+  #controlStatus{height:42px!important;padding:3px 8px!important}
+  .powerMeters{height:58px!important;padding:0 8px!important;gap:2px 6px!important}
+  .powerMeters .pmrow{font-size:8px!important}.powerMeters .pbar{height:4px!important}
+
+  .stickZone{display:block!important;visibility:visible!important;top:100px!important;height:120px!important;width:27%!important;z-index:5200!important}
+  #moveZone{left:0!important} #aimZone{right:0!important}
+  .stickZone .ring{width:88px!important;height:88px!important;top:48%!important}
+  .stickZone .knob{width:40px!important;height:40px!important;top:48%!important}
+
+  /* middle lane: speed at top, NOVA below */
+  #speedCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:50%!important;top:103px!important;transform:translateX(-50%)!important;
+    width:150px!important;height:34px!important;justify-content:center!important;gap:6px!important;z-index:5600!important;
+  }
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:42px!important;min-width:42px!important;height:32px!important;padding:0!important}
+  #dashBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:143px!important;
+    transform:translateX(-50%)!important;width:68px!important;height:68px!important;z-index:5500!important;
+  }
+  /* sound sits above right stick; pause under sound, not over stick */
+  #soundCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:auto!important;right:9%!important;top:103px!important;transform:none!important;
+    width:116px!important;height:30px!important;z-index:5700!important;align-items:center!important;
+  }
+  #volume{width:64px!important}
+  #pauseBtn{
+    display:flex!important;visibility:visible!important;left:auto!important;right:14%!important;top:137px!important;
+    transform:none!important;width:46px!important;height:30px!important;z-index:5700!important;
+  }
+}
+/* Landscape phone/foldable: meters end before controls; four distinct lanes */
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+  html,body{height:100dvh!important;overflow:hidden!important}
+  body{display:grid!important;grid-template-rows:minmax(0,1fr) 190px!important}
+  #wrap{grid-row:1!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important}
+  canvas#game{width:100%!important;height:100%!important;object-fit:fill!important;max-height:none!important}
+  #touchUI{grid-row:2!important;position:relative!important;width:100%!important;height:190px!important;min-height:190px!important;overflow:hidden!important}
+  #controlStatus{height:42px!important;padding:3px 12px!important}
+  .powerMeters{height:55px!important;padding:0 12px!important;gap:2px 8px!important}
+  .powerMeters .pmrow{font-size:8px!important}.powerMeters .pbar{height:4px!important}
+
+  .stickZone{display:block!important;visibility:visible!important;top:96px!important;height:90px!important;width:25%!important}
+  #moveZone{left:2%!important} #aimZone{right:2%!important}
+  .stickZone .ring{width:78px!important;height:78px!important;top:50%!important}
+  .stickZone .knob{width:36px!important;height:36px!important;top:50%!important}
+
+  #speedCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:34%!important;top:112px!important;transform:translateX(-50%)!important;
+    width:145px!important;height:34px!important;gap:6px!important;z-index:5600!important;
+  }
+  #speedCtl>span{display:none!important}
+  #speedCtl .speedBtn{width:40px!important;min-width:40px!important;height:32px!important;padding:0!important}
+
+  #dashBtn{
+    display:flex!important;visibility:visible!important;left:50%!important;top:108px!important;
+    transform:translateX(-50%)!important;width:68px!important;height:68px!important;z-index:5500!important;
+  }
+  #soundCtl{
+    display:flex!important;visibility:visible!important;position:absolute!important;
+    left:66%!important;right:auto!important;top:108px!important;transform:translateX(-50%)!important;
+    width:126px!important;height:30px!important;z-index:5700!important;
+  }
+  #volume{width:72px!important}
+  #pauseBtn{
+    display:flex!important;visibility:visible!important;left:66%!important;right:auto!important;top:145px!important;
+    transform:translateX(-50%)!important;width:46px!important;height:30px!important;z-index:5700!important;
+  }
+}
+
+/* V68 VERIFIED MOBILE LAYOUT — five independent control lanes */
+html.mobileUI,html.mobileUI body{margin:0!important;width:100%!important;height:100dvh!important;overflow:hidden!important}
+html.mobileUI body{display:grid!important;grid-template-rows:minmax(0,1fr) 210px!important;grid-template-columns:100%!important}
+html.mobileUI #wrap{grid-row:1!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;margin:0!important;overflow:hidden!important}
+html.mobileUI canvas#game{display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;object-fit:fill!important}
+html.mobileUI #touchUI{grid-row:2!important;position:relative!important;display:block!important;visibility:visible!important;opacity:1!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:100%!important;height:210px!important;min-height:210px!important;overflow:hidden!important;z-index:5000!important;background:#03101bf8!important}
+html.mobileUI #controlStatus{display:grid!important;visibility:visible!important;height:40px!important;padding:2px 10px!important;box-sizing:border-box!important}
+html.mobileUI .powerMeters{display:grid!important;visibility:visible!important;height:50px!important;padding:0 10px!important;gap:1px 8px!important;box-sizing:border-box!important}
+html.mobileUI .powerMeters .pmrow{font-size:8px!important;line-height:9px!important}
+html.mobileUI .powerMeters .pbar{height:4px!important}
+/* Bottom 120px: LEFT STICK | SPEED | NOVA | SOUND/PAUSE | RIGHT STICK */
+html.mobileUI .stickZone{display:block!important;visibility:visible!important;opacity:1!important;position:absolute!important;top:92px!important;height:114px!important;width:20%!important;z-index:5100!important}
+html.mobileUI #moveZone{left:2%!important;right:auto!important}
+html.mobileUI #aimZone{left:auto!important;right:2%!important}
+html.mobileUI .stickZone .ring{width:84px!important;height:84px!important;top:48%!important}
+html.mobileUI .stickZone .knob{width:38px!important;height:38px!important;top:48%!important}
+html.mobileUI .stickZone span{bottom:0!important;font-size:10px!important}
+html.mobileUI #speedCtl{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:31%!important;top:112px!important;bottom:auto!important;transform:translateX(-50%)!important;width:116px!important;height:36px!important;align-items:center!important;justify-content:center!important;gap:3px!important;z-index:5600!important}
+html.mobileUI #speedCtl>span{display:none!important}
+html.mobileUI #speedCtl .speedBtn{position:relative!important;width:36px!important;min-width:36px!important;height:34px!important;padding:0!important;margin:0!important;z-index:5601!important}
+html.mobileUI #dashBtn{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:50%!important;top:108px!important;bottom:auto!important;transform:translateX(-50%)!important;width:78px!important;height:78px!important;z-index:5500!important}
+html.mobileUI #soundCtl{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:69%!important;right:auto!important;top:108px!important;bottom:auto!important;transform:translateX(-50%)!important;width:112px!important;height:30px!important;align-items:center!important;justify-content:center!important;gap:3px!important;z-index:5700!important}
+html.mobileUI #volume{width:62px!important}
+html.mobileUI #pauseBtn{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;left:69%!important;right:auto!important;top:148px!important;bottom:auto!important;transform:translateX(-50%)!important;width:48px!important;height:32px!important;z-index:5700!important}
+/* Portrait gets an even shorter panel so the arena is taller. */
+@media (max-aspect-ratio:4/5){
+ html.mobileUI body{grid-template-rows:minmax(0,1fr) 200px!important}
+ html.mobileUI #touchUI{height:200px!important;min-height:200px!important}
+ html.mobileUI .stickZone{top:88px!important;height:108px!important}
+ html.mobileUI .stickZone .ring{width:80px!important;height:80px!important}
+ html.mobileUI #speedCtl{top:106px!important}
+ html.mobileUI #dashBtn{top:102px!important;width:74px!important;height:74px!important}
+ html.mobileUI #soundCtl{top:103px!important}
+ html.mobileUI #pauseBtn{top:140px!important}
+}
+
+/* V69 PORTRAIT ONLY — use the former black middle area as a spacious control deck.
+   Landscape V68 is intentionally untouched. */
+@media (max-aspect-ratio:4/5){
+ html.mobileUI body{grid-template-rows:minmax(0,1fr) 500px!important}
+ html.mobileUI #touchUI{
+   height:500px!important;min-height:500px!important;overflow:hidden!important;
+   background:#03101b!important;border-top:1px solid #3ddfff88!important;
+ }
+ /* HUD occupies its own top band; no controls are allowed in this band. */
+ html.mobileUI #controlStatus{position:absolute!important;left:0!important;right:0!important;top:0!important;height:64px!important;padding:5px 12px!important;box-sizing:border-box!important;z-index:5100!important}
+ html.mobileUI .powerMeters{position:absolute!important;left:0!important;right:0!important;top:64px!important;height:106px!important;padding:4px 12px!important;box-sizing:border-box!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px 12px!important;z-index:5100!important}
+ html.mobileUI .powerMeters .pmrow{font-size:10px!important;line-height:12px!important}
+ html.mobileUI .powerMeters .pbar{height:6px!important}
+
+ /* Utility row: SPEED | PAUSE | VOLUME — three isolated columns. */
+ html.mobileUI #speedCtl{left:20%!important;top:190px!important;width:150px!important;height:48px!important;transform:translateX(-50%)!important;gap:6px!important}
+ html.mobileUI #speedCtl .speedBtn{width:44px!important;min-width:44px!important;height:42px!important;font-size:12px!important}
+ html.mobileUI #pauseBtn{left:50%!important;right:auto!important;top:190px!important;width:58px!important;height:44px!important;transform:translateX(-50%)!important}
+ html.mobileUI #soundCtl{left:80%!important;right:auto!important;top:194px!important;width:132px!important;height:38px!important;transform:translateX(-50%)!important;justify-content:center!important}
+ html.mobileUI #volume{width:82px!important}
+
+ /* Main control row: MOVE | NOVA | AIM — large and completely separate. */
+ html.mobileUI .stickZone{top:270px!important;height:205px!important;width:30%!important}
+ html.mobileUI #moveZone{left:2%!important;right:auto!important}
+ html.mobileUI #aimZone{left:auto!important;right:2%!important}
+ html.mobileUI .stickZone .ring{width:128px!important;height:128px!important;top:44%!important}
+ html.mobileUI .stickZone .knob{width:54px!important;height:54px!important;top:44%!important}
+ html.mobileUI .stickZone span{bottom:2px!important;font-size:13px!important}
+ html.mobileUI #dashBtn{left:50%!important;top:300px!important;width:112px!important;height:112px!important;transform:translateX(-50%)!important}
+ html.mobileUI #dashBtn::before{font-size:39px!important}
+ html.mobileUI #dashBtn::after{font-size:12px!important}
+}
+
+/* V70 PORTRAIT FIX — fill the entire former black game region; title hides gameplay HUD/control deck */
+@media (max-aspect-ratio:4/5){
+  /* During gameplay, #wrap owns every pixel above the control deck.
+     Force the canvas itself to cover that whole region, rather than retaining an old intrinsic/mobile height. */
+  html.mobileUI #wrap{position:relative!important;overflow:hidden!important;background:#02040a!important}
+  html.mobileUI #wrap > canvas#game{
+    position:absolute!important;inset:0!important;left:0!important;top:0!important;right:0!important;bottom:0!important;
+    width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;
+    max-width:none!important;max-height:none!important;object-fit:fill!important;display:block!important;
+  }
+  /* Title: the lower HUD/control board is not part of the title screen. */
+  html.mobileUI body.titleMode{display:block!important;height:100dvh!important;overflow:hidden!important}
+  html.mobileUI body.titleMode #touchUI{display:none!important}
+  html.mobileUI body.titleMode #wrap{
+    width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;
+    margin:0!important;display:block!important;
+  }
+  html.mobileUI body.titleMode #overlay{
+    display:grid!important;position:absolute!important;inset:0!important;overflow:hidden!important;
+    align-items:center!important;justify-items:center!important;padding:8px!important;
+  }
+  html.mobileUI body.titleMode #panel{
+    width:96%!important;max-width:680px!important;max-height:96%!important;overflow:hidden!important;
+    padding:10px 8px!important;margin:0!important;
+  }
+  html.mobileUI body.titleMode #panel .logo{font-size:clamp(25px,7vw,40px)!important;line-height:1.08!important;letter-spacing:3px!important}
+  html.mobileUI body.titleMode #panel .tag{font-size:10px!important;letter-spacing:2px!important;margin-top:3px!important}
+  html.mobileUI body.titleMode #panel p{font-size:12px!important;margin:7px 0!important}
+  html.mobileUI body.titleMode #difficultySelect{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;justify-content:center!important;margin:3px 0!important}
+  html.mobileUI body.titleMode #difficultySelect .difficultyBtn{width:31%!important;min-width:0!important;margin:2px!important;padding:7px 2px!important;font-size:12px!important}
+  html.mobileUI body.titleMode .metaPoint{margin:5px auto!important;padding:6px 10px!important;font-size:13px!important}
+  html.mobileUI body.titleMode #metaShopBtn,html.mobileUI body.titleMode #start{margin:3px!important;padding:8px 10px!important;font-size:12px!important}
+  html.mobileUI body.titleMode .small{font-size:10px!important;margin:3px 0!important}
+}
+
+/* V72 — BOSS SHOP: portrait 3 columns, compact, scroll only when necessary */
+@media (max-aspect-ratio:4/5){
+  #overlay:has(#cards.shopGrid){
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    align-items:start!important;
+    padding:6px 0 12px!important;
+  }
+  #overlay:has(#cards.shopGrid) #panel{
+    width:98%!important;
+    max-width:98%!important;
+    max-height:none!important;
+    margin:0 auto!important;
+    padding:7px 6px 10px!important;
+    overflow:visible!important;
+  }
+  #overlay:has(#cards.shopGrid) .shopHeader{
+    min-height:34px!important;
+    margin:0 0 4px!important;
+    gap:5px!important;
+  }
+  #overlay:has(#cards.shopGrid) .shopHeader .logo{
+    font-size:19px!important;
+    line-height:1!important;
+  }
+  #overlay:has(#cards.shopGrid) #leaveShopTop{
+    min-height:30px!important;
+    padding:4px 7px!important;
+    font-size:10px!important;
+  }
+  #overlay:has(#cards.shopGrid) #shopPoints,
+  #overlay:has(#cards.shopGrid) #shopNote,
+  #overlay:has(#cards.shopGrid) .tag{
+    font-size:10px!important;
+    line-height:1.15!important;
+    margin:2px 0!important;
+  }
+  #cards.shopGrid{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:4px 0!important;
+    align-items:stretch!important;
+  }
+  #cards.shopGrid .card{
+    min-width:0!important;
+    width:100%!important;
+    min-height:68px!important;
+    height:auto!important;
+    padding:5px 5px!important;
+    margin:0!important;
+    gap:2px!important;
+    border-radius:7px!important;
+    overflow:hidden!important;
+  }
+  #cards.shopGrid .shopName{
+    font-size:9px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    text-overflow:clip!important;
+  }
+  #cards.shopGrid .shopEffect{
+    font-size:8px!important;
+    line-height:1.12!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+  #cards.shopGrid .shopPrice{
+    font-size:7.5px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+  #overlay:has(#cards.shopGrid) #leaveShop{
+    min-height:30px!important;
+    padding:5px 8px!important;
+    margin-top:4px!important;
+    font-size:10px!important;
+  }
+}
+/* Landscape keeps the existing layout; only make boss-shop cards slightly denser. */
+@media (min-aspect-ratio:5/4){
+  #overlay:has(#cards.shopGrid) #panel{overflow-y:auto!important}
+  #cards.shopGrid .card{min-height:72px!important;padding:6px 8px!important}
+}
+
+/* V74 — CLEAR RESULT fits without scrolling */
+#overlay:has(#titleReturn){
+  overflow:hidden!important;
+  align-items:center!important;
+  padding:4px!important;
+}
+#overlay:has(#titleReturn) #panel{
+  width:min(94%,620px)!important;
+  max-height:96%!important;
+  overflow:hidden!important;
+  padding:12px 14px!important;
+  margin:auto!important;
+}
+#overlay:has(#titleReturn) .logo{font-size:30px!important;line-height:1!important;margin:0 0 3px!important}
+#overlay:has(#titleReturn) .tag{font-size:10px!important;line-height:1.1!important;margin:2px 0!important}
+#overlay:has(#titleReturn) h2{font-size:20px!important;line-height:1.1!important;margin:7px 0 4px!important}
+#overlay:has(#titleReturn) p{font-size:12px!important;line-height:1.2!important;margin:5px 0!important}
+#overlay:has(#titleReturn) .report{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:5px!important;margin:7px 0!important;
+}
+#overlay:has(#titleReturn) .report>div{padding:6px!important;font-size:11px!important}
+#overlay:has(#titleReturn) #titleReturn{
+  min-height:36px!important;padding:6px 14px!important;margin-top:6px!important;font-size:12px!important;
+}
+@media (max-aspect-ratio:4/5){
+ #overlay:has(#titleReturn) #panel{width:96%!important;max-height:94%!important;padding:9px 10px!important}
+ #overlay:has(#titleReturn) .logo{font-size:24px!important}
+ #overlay:has(#titleReturn) h2{font-size:17px!important;margin:5px 0 3px!important}
+ #overlay:has(#titleReturn) p{font-size:10px!important;margin:3px 0!important}
+ #overlay:has(#titleReturn) .report{gap:3px!important;margin:5px 0!important}
+ #overlay:has(#titleReturn) .report>div{padding:4px!important;font-size:10px!important}
+ #overlay:has(#titleReturn) #titleReturn{min-height:34px!important;margin-top:4px!important}
+}
+
+/* V76 — permanent point NUMBER only */
+#metaPoints{color:#ffd85a!important;font-weight:900!important}
+.metaPointNumber{color:#ffd85a!important;font-weight:900!important}
+
+/* V77 — all numeric values shown in the game UI are yellow; labels stay unchanged */
+.uiNumber{color:#ffd85a!important;font-weight:900!important}
+
+/* V79 — SYSTEM UPGRADE descriptions: readable 2–3 lines */
+@media (max-aspect-ratio:4/5){
+  #overlay:has(.rarityTag) .card{
+    min-width:0!important;
+    padding:8px 8px!important;
+    overflow:hidden!important;
+  }
+  #overlay:has(.rarityTag) .card>b{
+    font-size:11px!important;
+    line-height:1.1!important;
+    margin:4px 0!important;
+    white-space:nowrap!important;
+  }
+  #overlay:has(.rarityTag) .card>span:last-child{
+    display:block!important;
+    font-size:10px!important;
+    line-height:1.25!important;
+    white-space:normal!important;
+    word-break:keep-all!important;
+    overflow-wrap:normal!important;
+    letter-spacing:-.35px!important;
+  }
+  #overlay:has(.rarityTag) .rarityTag{
+    font-size:9px!important;
+    line-height:1!important;
+    padding:3px 6px!important;
+  }
+}
+
+/* V80 — never split an upgrade value such as +8%, +15%, +3回, 10本 */
+#overlay:has(.rarityTag) .uiNumber{
+  display:inline-block!important;
+  white-space:nowrap!important;
+}
+#overlay:has(.rarityTag) .card>span:last-child{
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  line-break:strict!important;
+}
+
+/* V81 — portrait BOSS SHOP: top exit only, 9 items fit without page scrolling */
+@media (orientation:portrait) and (max-width:700px){
+  #overlay:has(.shopGrid){
+    overflow:hidden!important;
+    align-items:start!important;
+  }
+  #overlay:has(.shopGrid) #panel{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    max-height:100%!important;
+    overflow:hidden!important;
+    padding:7px 12px 8px!important;
+    margin:0!important;
+  }
+  #overlay:has(.shopGrid) .shopHeader{
+    min-height:38px!important;
+    margin:0 0 3px!important;
+    gap:8px!important;
+  }
+  #overlay:has(.shopGrid) .shopHeader .logo{
+    font-size:21px!important;
+    line-height:1!important;
+    letter-spacing:5px!important;
+  }
+  #overlay:has(.shopGrid) #leaveShopTop{
+    min-height:34px!important;
+    height:34px!important;
+    padding:4px 10px!important;
+    font-size:11px!important;
+    line-height:1.05!important;
+  }
+  #overlay:has(.shopGrid) .tag{
+    margin:2px 0!important;
+    font-size:10px!important;
+    line-height:1.1!important;
+  }
+  #overlay:has(.shopGrid) p{
+    margin:3px 0 5px!important;
+    font-size:11px!important;
+    line-height:1.15!important;
+  }
+  #overlay:has(.shopGrid) #cards.shopGrid{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    width:100%!important;
+    max-width:none!important;
+    height:calc(100% - 92px)!important;
+    margin:0!important;
+    overflow:hidden!important;
+  }
+  #overlay:has(.shopGrid) #cards.shopGrid .card{
+    box-sizing:border-box!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:100%!important;
+    padding:5px 6px!important;
+    gap:2px!important;
+    overflow:hidden!important;
+    align-content:center!important;
+  }
+  #overlay:has(.shopGrid) .shopName{
+    font-size:10px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+  }
+  #overlay:has(.shopGrid) .shopEffect{
+    font-size:9px!important;
+    line-height:1.08!important;
+    overflow-wrap:anywhere!important;
+  }
+  #overlay:has(.shopGrid) .shopPrice{
+    font-size:8.5px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+  }
+  #overlay:has(.shopGrid) #leaveShop{display:none!important}
+}
+
+/* V82 — BOSS SHOP 所持POINTの数字を黄色表示 */
+#shopPoints.pointNumber{color:#ffd85a!important;font-weight:1000!important}
+</style>
