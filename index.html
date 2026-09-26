@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>匠のサンプルゲーム1: Arena Protocol</title>
+<title>ULTIMATE ムービー→ラスボス戦テスト - 匠のサンプルゲーム1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#050711;color:#eaf7ff;font-family:system-ui,"Yu Gothic",sans-serif;overflow:hidden}
 body{display:grid;place-items:center;min-height:100vh;touch-action:none;overscroll-behavior:none}
@@ -211,6 +211,8 @@ button{font:inherit;color:white;background:#11213b;border:1px solid #57c9ff;bord
 #difficultySelect .difficultyBtn.active{background:#126c91;color:#fff;border-color:#9beeff;box-shadow:0 0 15px #41dcff77}
 #difficultySelect .difficultyBtn[data-difficulty="easy"].active{background:#176f4a;border-color:#75ffad}
 #difficultySelect .difficultyBtn[data-difficulty="hard"].active{background:#7d2435;border-color:#ff8096}
+#difficultySelect .difficultyBtn[data-difficulty="ultimate"].active{background:#5b167d;border-color:#ef8cff;box-shadow:0 0 18px #d63dff99}
+#difficultySelect .difficultyBtn:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.7)}
 
 .shopHeader{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:4px}
 .shopHeader .logo{margin:0!important}
@@ -401,13 +403,440 @@ button{font:inherit;color:white;background:#11213b;border:1px solid #57c9ff;bord
  html.mobileUI body.upgradeMode #cards .card span:not(.rarityTag){font-size:9px!important}
 }
 
+/* V84 TEST — HP 1,000,000; homing missile 2s/2s/HP half; mega laser every 10s after 2s locked charge, hit removes 80% current HP */
+
+#ultimateClearMovie{position:fixed;inset:0;z-index:9999;background:#010207;display:none;overflow:hidden}#ultimateClearMovie canvas{position:absolute;inset:0;width:100%;height:100%}#ultimateClearCaption{position:absolute;left:0;right:0;bottom:10%;text-align:center;font-size:clamp(18px,3vw,34px);font-weight:1000;letter-spacing:.25em;text-shadow:0 0 18px #8ef;color:#fff}.allClearRainbow{font-size:clamp(34px,7vw,72px)!important;font-weight:1000!important;letter-spacing:.10em;background:linear-gradient(90deg,#ff4b78,#ffb84d,#fff35b,#66ff9a,#55dfff,#7786ff,#d96cff,#ff4b78);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:allClearRainbowMove 2.4s linear infinite;filter:drop-shadow(0 0 15px #7de8ff)}@keyframes allClearRainbowMove{to{background-position:300% 0}}.staffIntro{margin:14px 0 8px;font-size:20px;font-weight:1000;letter-spacing:.18em;color:#fff;text-shadow:0 0 12px #7de8ff}.staffCredits{width:min(500px,92%);margin:0 auto 14px;display:grid;gap:4px;text-align:left}.staffCredits div{display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:10px;align-items:center;padding:3px 10px;border-bottom:1px solid #31506a55}.staffCredits span{font-size:12px;letter-spacing:.12em;color:#a9c9e5}.staffCredits b{text-align:right;color:#fff;text-shadow:0 0 9px #7de8ff}
+
+/* V89 — compact numeric status: no progress bars */
+.powerMeters .pbar{display:none!important}
+.powerMeters .pm{
+  min-height:28px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  padding:2px 7px!important;
+  box-sizing:border-box!important;
+}
+.powerMeters .pmrow{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+}
+.powerMeters .pmrow>span:first-child{
+  font-size:10px!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+}
+.powerMeters .pmrow>span:last-child{
+  font-size:15px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  color:#ffd85a!important;
+  white-space:nowrap!important;
+  text-shadow:0 0 8px #ffca3a55!important;
+}
+@media (max-aspect-ratio:4/5){
+ .powerMeters{height:auto!important;min-height:0!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px 7px!important}
+ .powerMeters .pm{min-height:24px!important;padding:1px 5px!important}
+ .powerMeters .pmrow>span:first-child{font-size:9px!important}
+ .powerMeters .pmrow>span:last-child{font-size:13px!important}
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ .powerMeters{height:auto!important;min-height:0!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:2px 8px!important}
+ .powerMeters .pm{min-height:23px!important;padding:1px 5px!important}
+ .powerMeters .pmrow>span:first-child{font-size:9px!important}
+ .powerMeters .pmrow>span:last-child{font-size:13px!important}
+}
+
+/* V90 — tighter numeric HUD and perfectly centered pause glyph */
+.powerMeters .pm{padding:1px 4px!important;gap:3px!important;overflow:hidden!important}
+.powerMeters .pmrow{
+  justify-content:flex-start!important;
+  gap:4px!important;
+  min-width:0!important;
+}
+.powerMeters .pmrow>span:first-child{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.powerMeters .pmrow>span:last-child{
+  flex:0 0 auto!important;
+  margin-left:2px!important;
+  font-size:14px!important;
+}
+#pauseBtn{
+  padding:0!important;
+  line-height:1!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+  font-size:0!important;
+}
+#pauseBtn::before{
+  content:"Ⅱ";
+  display:block;
+  font-size:18px;
+  font-weight:1000;
+  line-height:1;
+  width:100%;
+  text-align:center;
+  transform:translateY(-1px);
+}
+@media (max-aspect-ratio:4/5){
+ .powerMeters .pm{padding:1px 3px!important}
+ .powerMeters .pmrow{gap:3px!important}
+ .powerMeters .pmrow>span:first-child{font-size:9px!important}
+ .powerMeters .pmrow>span:last-child{font-size:12px!important;margin-left:1px!important}
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ .powerMeters .pm{padding:1px 3px!important}
+ .powerMeters .pmrow{gap:3px!important}
+ .powerMeters .pmrow>span:first-child{font-size:8.5px!important}
+ .powerMeters .pmrow>span:last-child{font-size:12px!important;margin-left:1px!important}
+}
+
+/* V91 — numeric status is always four columns */
+.powerMeters{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+}
+@media (max-width:700px){
+ .powerMeters{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media (max-aspect-ratio:4/5){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   gap:3px 5px!important;
+ }
+ html.mobileUI .powerMeters .pm{min-width:0!important;padding:1px 2px!important}
+ html.mobileUI .powerMeters .pmrow{gap:2px!important;min-width:0!important}
+ html.mobileUI .powerMeters .pmrow>span:first-child{font-size:8px!important}
+ html.mobileUI .powerMeters .pmrow>span:last-child{font-size:11px!important;margin-left:0!important}
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   gap:2px 6px!important;
+ }
+}
+
+/* V92 — 3 across × 4 down; reserve a separate status band */
+.powerMeters{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(23px,auto)!important;
+}
+@media (max-width:700px){
+ .powerMeters{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media (max-aspect-ratio:4/5){
+ html.mobileUI .powerMeters{
+   top:64px!important;
+   height:124px!important;
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+   grid-template-rows:repeat(4,27px)!important;
+   gap:3px 7px!important;
+   padding:4px 10px!important;
+   overflow:hidden!important;
+ }
+ html.mobileUI .powerMeters .pm{min-height:27px!important;padding:1px 3px!important}
+ html.mobileUI .powerMeters .pmrow{gap:3px!important}
+ html.mobileUI .powerMeters .pmrow>span:first-child{font-size:8.5px!important}
+ html.mobileUI .powerMeters .pmrow>span:last-child{font-size:11.5px!important}
+ /* utility controls start below the 4-row status block */
+ html.mobileUI #speedCtl{top:205px!important}
+ html.mobileUI #pauseBtn{top:205px!important}
+ html.mobileUI #soundCtl{top:209px!important}
+ html.mobileUI .stickZone{top:285px!important}
+ html.mobileUI #dashBtn{top:325px!important}
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ html.mobileUI .powerMeters{
+   height:88px!important;
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+   grid-template-rows:repeat(4,20px)!important;
+   gap:1px 7px!important;
+   padding:2px 10px!important;
+   overflow:hidden!important;
+ }
+ html.mobileUI .powerMeters .pm{min-height:20px!important;padding:0 3px!important}
+ html.mobileUI .powerMeters .pmrow>span:first-child{font-size:8px!important}
+ html.mobileUI .powerMeters .pmrow>span:last-child{font-size:11px!important}
+ /* controls are placed after the status block, not on top of it */
+ html.mobileUI .stickZone{top:112px!important}
+ html.mobileUI #speedCtl{top:118px!important}
+ html.mobileUI #dashBtn{top:116px!important}
+ html.mobileUI #soundCtl{top:116px!important}
+ html.mobileUI #pauseBtn{top:151px!important}
+}
+
+/* V93 — desktop screenshot fix: status block and controls occupy separate vertical bands */
+@media (pointer:fine) and (min-width:901px){
+  #touchUI{
+    height:210px!important;
+    min-height:210px!important;
+    overflow:hidden!important;
+  }
+  #controlStatus{
+    height:42px!important;
+    padding:3px 12px!important;
+    box-sizing:border-box!important;
+  }
+  .powerMeters{
+    position:absolute!important;
+    left:24%!important;
+    right:24%!important;
+    top:42px!important;
+    height:92px!important;
+    padding:4px 8px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(4,19px)!important;
+    gap:2px 16px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  .powerMeters .pm{
+    min-height:19px!important;
+    padding:0 2px!important;
+    overflow:visible!important;
+  }
+  .powerMeters .pmrow{
+    gap:4px!important;
+    overflow:visible!important;
+  }
+  .powerMeters .pmrow>span:first-child{
+    font-size:10px!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+  .powerMeters .pmrow>span:last-child{
+    font-size:13px!important;
+  }
+
+  /* Everything interactive starts BELOW the status block. */
+  .stickZone{
+    top:134px!important;
+    height:72px!important;
+  }
+  .stickZone .ring{
+    width:58px!important;
+    height:58px!important;
+  }
+  .stickZone .knob{
+    width:28px!important;
+    height:28px!important;
+  }
+  #speedCtl{
+    left:calc(50% - 105px)!important;
+    top:150px!important;
+    transform:translateX(-50%)!important;
+    width:118px!important;
+  }
+  #dashBtn{
+    left:50%!important;
+    top:138px!important;
+    transform:translateX(-50%)!important;
+    width:64px!important;
+    height:64px!important;
+  }
+  #soundCtl{
+    left:calc(50% + 105px)!important;
+    right:auto!important;
+    top:142px!important;
+    transform:translateX(-50%)!important;
+    width:125px!important;
+  }
+  #pauseBtn{
+    left:calc(50% + 105px)!important;
+    right:auto!important;
+    top:174px!important;
+    transform:translateX(-50%)!important;
+    width:48px!important;
+    height:30px!important;
+  }
+}
+
+/* V94 — requested layout: 4 items across × 3 rows */
+.powerMeters{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(20px,auto))!important;
+}
+@media (pointer:fine) and (min-width:901px){
+  .powerMeters{
+    left:18%!important;
+    right:18%!important;
+    top:42px!important;
+    height:76px!important;
+    padding:4px 8px!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,21px)!important;
+    gap:3px 12px!important;
+  }
+  .powerMeters .pm{min-height:21px!important;padding:0 2px!important}
+  .powerMeters .pmrow{gap:3px!important}
+  .powerMeters .pmrow>span:first-child{font-size:9px!important}
+  .powerMeters .pmrow>span:last-child{font-size:12px!important}
+  .stickZone{top:122px!important;height:82px!important}
+  #speedCtl{top:145px!important}
+  #dashBtn{top:128px!important}
+  #soundCtl{top:137px!important}
+  #pauseBtn{top:170px!important}
+}
+@media (max-aspect-ratio:4/5){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   grid-template-rows:repeat(3,27px)!important;
+   height:94px!important;
+ }
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   grid-template-rows:repeat(3,20px)!important;
+   height:68px!important;
+ }
+}
+
+/* V95 — confirmed request: 3 items horizontally, 4 rows vertically */
+.powerMeters{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:repeat(4,minmax(20px,auto))!important;
+}
+@media (pointer:fine) and (min-width:901px){
+  #touchUI{height:220px!important;min-height:220px!important}
+  .powerMeters{
+    position:absolute!important;
+    left:18%!important;
+    right:18%!important;
+    top:42px!important;
+    height:100px!important;
+    padding:4px 10px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(4,21px)!important;
+    gap:3px 18px!important;
+    overflow:hidden!important;
+  }
+  .powerMeters .pm{min-height:21px!important;padding:0 3px!important}
+  .powerMeters .pmrow{gap:4px!important}
+  .powerMeters .pmrow>span:first-child{font-size:10px!important}
+  .powerMeters .pmrow>span:last-child{font-size:13px!important}
+  /* controls are entirely below the 4-row status block */
+  .stickZone{top:146px!important;height:70px!important}
+  #speedCtl{top:160px!important}
+  #dashBtn{top:150px!important}
+  #soundCtl{top:153px!important}
+  #pauseBtn{top:185px!important}
+}
+@media (max-aspect-ratio:4/5){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+   grid-template-rows:repeat(4,27px)!important;
+   height:124px!important;
+ }
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+   grid-template-rows:repeat(4,20px)!important;
+   height:88px!important;
+ }
+}
+
+/* V96 — exact requested ordering:
+   row 1: laser / attack / speed / fire-rate
+   row 2: bomb reuse / crit / regen / barrier
+   row 3: pierce / explosion / bomb-charge */
+.powerMeters{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(20px,auto))!important;
+}
+@media (pointer:fine) and (min-width:901px){
+  #touchUI{height:210px!important;min-height:210px!important}
+  .powerMeters{
+    left:12%!important;
+    right:12%!important;
+    top:42px!important;
+    height:78px!important;
+    padding:4px 8px!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,21px)!important;
+    gap:3px 12px!important;
+    overflow:hidden!important;
+  }
+  .powerMeters .pm{min-height:21px!important;padding:0 2px!important}
+  .powerMeters .pmrow{gap:3px!important}
+  .powerMeters .pmrow>span:first-child{font-size:9px!important}
+  .powerMeters .pmrow>span:last-child{font-size:12px!important}
+  .stickZone{top:128px!important;height:78px!important}
+  #speedCtl{top:148px!important}
+  #dashBtn{top:132px!important}
+  #soundCtl{top:140px!important}
+  #pauseBtn{top:173px!important}
+}
+@media (max-aspect-ratio:4/5){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   grid-template-rows:repeat(3,27px)!important;
+   height:94px!important;
+ }
+}
+@media (min-aspect-ratio:5/4) and (max-height:900px){
+ html.mobileUI .powerMeters{
+   grid-template-columns:repeat(4,minmax(0,1fr))!important;
+   grid-template-rows:repeat(3,20px)!important;
+   height:68px!important;
+ }
+}
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#03111d">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style id="v97-final-status-layout">
+/* FINAL CASCADE OVERRIDE — must remain the last stylesheet in HEAD */
+.powerMeters{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,22px)!important;
+  gap:3px 12px!important;
+}
+.powerMeters .pbar{display:none!important}
+.powerMeters .pm{min-width:0!important;min-height:22px!important;padding:0 3px!important}
+.powerMeters .pmrow{display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:4px!important;min-width:0!important}
+.powerMeters .pmrow>span:first-child{font-size:10px!important;white-space:nowrap!important}
+.powerMeters .pmrow>span:last-child{font-size:13px!important;font-weight:1000!important;color:#ffd85a!important;white-space:nowrap!important}
+
+/* PC: status is an isolated upper band; controls start below it. */
+@media (pointer:fine) and (min-width:901px){
+ #touchUI{height:210px!important;min-height:210px!important;overflow:hidden!important}
+ #controlStatus{height:42px!important}
+ .powerMeters{
+   position:absolute!important;left:10%!important;right:10%!important;top:42px!important;
+   height:78px!important;padding:4px 8px!important;box-sizing:border-box!important;
+ }
+ .stickZone{top:128px!important;height:78px!important}
+ #speedCtl{top:148px!important}
+ #dashBtn{top:132px!important}
+ #soundCtl{top:140px!important}
+ #pauseBtn{top:173px!important}
+}
+
+/* Mobile keeps the same exact 4 + 4 + 3 ordering. */
+html.mobileUI .powerMeters{
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-template-rows:repeat(3,22px)!important;
+}
+#pauseBtn{
+ padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ line-height:1!important;font-size:0!important;box-sizing:border-box!important;
+}
+#pauseBtn::before{
+ content:"Ⅱ";display:block;width:100%;text-align:center;font-size:18px;font-weight:1000;line-height:1;
+}
+</style>
+
 </head>
 <body>
 <div id="wrap" tabindex="0">
@@ -427,11 +856,14 @@ button{font:inherit;color:white;background:#11213b;border:1px solid #57c9ff;bord
   <button type="button" class="difficultyBtn" data-difficulty="easy">EASY<br><small>初期HP 400</small></button>
   <button type="button" class="difficultyBtn active" data-difficulty="normal">NORMAL<br><small>初期HP 100</small></button>
   <button type="button" class="difficultyBtn" data-difficulty="hard">HARD<br><small>初期HP 50</small></button>
+  <button type="button" class="difficultyBtn" data-difficulty="ultimate">ULTIMATE<br><small>初期HP 10 / 超高難度</small></button>
  </div>
- <div class="metaPoint">永久強化ポイント <b id="initialMetaPoints">0</b></div>
- <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.1 ／ NORMAL ×1 ／ HARD ×10</div>
+ <div class="small" style="margin:5px 0 8px;color:#ffd85a;font-weight:900">※ ULTIMATEはHARDモードをクリアしてから挑戦することをおすすめします。</div>
+ <div class="titleStartRow"><button id="start">ミッションスタート</button></div>
+<div class="metaPoint">永久強化ポイント <b id="initialMetaPoints">0</b></div>
+ <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.5 ／ NORMAL ×1 ／ HARD ×2 ／ ULTIMATE ×4</div>
  <button id="metaShopBtn">⚙ 永久強化ショップ</button>
- <button id="start">START MISSION</button>
+ 
  <div class="small" id="padstate">永久強化ポイントで永久強化を購入できます。</div>
 </div></div>
 </div>
@@ -449,7 +881,10 @@ button{font:inherit;color:white;background:#11213b;border:1px solid #57c9ff;bord
   <div class="pm"><div class="pmrow"><span>ボム再使用</span><span id="bombMeterText">5.5s / 3.0s</span></div><div class="pbar"><div id="bombMeter" class="pfill"></div></div></div>
   <div class="pm"><div class="pmrow"><span>クリティカル率</span><span id="critMeterText">0% / 30%</span></div><div class="pbar"><div id="critMeter" class="pfill"></div></div></div>
   <div class="pm"><div class="pmrow"><span>自動回復</span><span id="regenMeterText">0.0 HP/秒</span></div><div class="pbar"><div id="regenMeter" class="pfill"></div></div></div>
-  <div class="pm"><div class="pmrow"><span>バリア</span><span id="barrierMeterText">0 / 0</span></div><div class="pbar"><div id="barrierMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>バリア</span><span id="barrierMeterText">0 / 30</span></div><div class="pbar"><div id="barrierMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>貫通</span><span id="pierceMeterText">0 / 3</span></div><div class="pbar"><div id="pierceMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>爆発</span><span id="explodeMeterText">0 / 3</span></div><div class="pbar"><div id="explodeMeter" class="pfill"></div></div></div>
+  <div class="pm"><div class="pmrow"><span>ボムチャージ</span><span id="bombChargeMeterText">0.0 / 0.6秒</span></div><div class="pbar"><div id="bombChargeMeter" class="pfill"></div></div></div>
  </div>
 
  <div id="moveZone" class="stickZone"><div class="ring"></div><div class="knob"></div><span>移動</span></div>
@@ -482,9 +917,9 @@ const W=cv.width,H=cv.height,TAU=Math.PI*2;
 let keys={},mouse={x:W/2,y:H/2,down:false},touchMove={x:0,y:0},touchAim={x:0,y:0,active:false},running=false,paused=false,last=0,t=0,wave=1,score=0,mult=1,spawnLeft=0,spawnTimer=0,waveDelay=0,boss=null,shake=0,flash=0;
 let bullets=[],enemies=[],particles=[],orbs=[],texts=[],lasers=[],waveActive=false,biome=0,bgTime=0;
 let explosionFx=[],gameSpeed=1;
-let selectedDifficulty="normal";
+let selectedDifficulty="ultimate";
 const META_KEY="takumi_sample_game_1_meta_v1";
-let meta={points:0,hp:0,damage:0,speed:0,regen:0,shield:0,laser:0,crit:0,pierce:0,explode:0,nova:0,pointBoost:0,rarity:0,barrier:0,revive:0,bossHunter:0};
+let meta={points:0,hp:0,damage:0,speed:0,regen:0,shield:0,laser:0,crit:0,pierce:0,explode:0,nova:0,pointBoost:0,rarity:0,barrier:0,revive:0,bossHunter:0,ultimateUnlocked:false};
 let runBanked=false;
 function loadMeta(){try{const x=JSON.parse(localStorage.getItem(META_KEY)||"null");if(x)meta=Object.assign(meta,x)}catch(_){}}
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(meta))}catch(_){}}
@@ -507,14 +942,13 @@ const metaDefs=[
  {id:"bossHunter",name:"ボスハンター",desc:"ボスへのレーザー威力 +2%",max:10,base:850}
 ];
 function metaCost(d){return Math.round((d.base*20)*(1+(meta[d.id]||0)*.55)/50)*50}
-function permanentPointMultiplier(){
- return selectedDifficulty==="easy"?.1:selectedDifficulty==="hard"?10:1;
-}
+function permanentPointMultiplier(){return selectedDifficulty==="easy"?.5:selectedDifficulty==="hard"?2:selectedDifficulty==="ultimate"?4:1;}
 function bankRunPoints(){
  if(runBanked)return 0;runBanked=true;
  const add=Math.max(0,Math.round((runStats?.earned||0)*permanentPointMultiplier()));meta.points+=add;saveMeta();return add;
 }
 
+let megaBeams=[];
 let player,waveMod=null,bossDeathPending=false,runStats={kills:0,bosses:0,maxMult:1,earned:0,eliteKills:0};
 const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 function message(text,seconds=1.5){
@@ -524,16 +958,17 @@ function message(text,seconds=1.5){
 }
 function reset(){
  document.body.classList.remove("titleMode","upgradeMode");
- const baseHp=selectedDifficulty==="easy"?400:selectedDifficulty==="hard"?50:100;
+ const baseHp=selectedDifficulty==="easy"?400:selectedDifficulty==="hard"?50:selectedDifficulty==="ultimate"?10:100;
  const startHp=Math.round(baseHp*(1+(meta.hp||0)*.05));
  const startDamage=18*(1+(meta.damage||0)*.03),startSpeed=420*(1+(meta.speed||0)*.02),startRegen=(meta.regen||0)*.1,startShield=(meta.shield||0)*20;
  const startShots=(meta.laser||0)>=5?2:1,startPierce=(meta.pierce||0)>=5?1:0,startExplode=(meta.explode||0)>=5?1:0;
- const startCrit=Math.min(.30,(meta.crit||0)*.01),startBomb=Math.max(3,5.5*(1-(meta.nova||0)*.03)),startBarrier=meta.barrier||0;
+ const startCrit=Math.min(.30,(meta.crit||0)*.01),startBomb=Math.max(3,10*(1-(meta.nova||0)*.03)),startBarrier=meta.barrier||0;
  player={x:W/2,y:H/2,r:14,hp:startHp,maxHp:startHp,speed:startSpeed,vx:0,vy:0,shield:startShield,maxShield:startShield,fire:0,fireRate:.115,damage:startDamage,bulletSpeed:760,spread:0,shots:startShots,bombCd:0,bombBase:startBomb,inv:0,angle:0,regen:startRegen,pierce:startPierce,explode:startExplode,crit:startCrit,bombOnKill:0,barrier:startBarrier,barrierMax:startBarrier,barrierDamage:startBarrier?24:0,revives:(meta.revive||0)>0?1:0,bossHunter:(meta.bossHunter||0)*.02};
- bullets=[];enemies=[];particles=[];orbs=[];texts=[];lasers=[];explosionFx=[];wave=1;biome=0;score=0;mult=1;shake=0;flash=0;boss=null;waveMod=null;bossDeathPending=false;runStats={kills:0,bosses:0,maxMult:1,earned:0,eliteKills:0};runBanked=false;running=true;paused=false;overlay.style.display="none";startWave();wrap.focus();
+ bullets=[];enemies=[];particles=[];orbs=[];texts=[];lasers=[];explosionFx=[];wave=1;biome=0;score=0;mult=1;shake=0;flash=0;boss=null;waveMod=null;bossDeathPending=false;runStats={kills:0,bosses:0,maxMult:1,earned:0,eliteKills:0};runBanked=false;startWave._ultimateIntroSeen=false;running=true;paused=false;overlay.style.display="none";startWave();wrap.focus();
 }
 function startWave(){
  biome=(wave-1)%3;
+ if(selectedDifficulty==="ultimate"&&wave===25&&!startWave._ultimateIntroSeen){startWave._ultimateIntroSeen=true;playUltimateIntro();return;}
  waveMod=null;
  if(wave%5!==0 && wave>=3 && Math.random()<.28){
   const mods=[
@@ -548,18 +983,75 @@ function startWave(){
  msg.textContent=wave%5===0?"⚠ BOSS WAVE "+wave:(waveMod?waveMod.name+" / WAVE "+wave:"WAVE "+wave);
  setTimeout(()=>{if(running)msg.textContent=""},1600);
  if(wave%5===0){
-  spawnBoss();for(let i=0;i<3;i++)edgeSpawn();spawnLeft=0;spawnTimer=0;
+  spawnBoss();spawnLeft=0;spawnTimer=0;
  }else{
   spawnLeft=Math.round((6+wave*1.65+Math.min(wave,30)*.22)*(waveMod?.id==="rush"?1.18:1));spawnTimer=0;
  }
 }
+function playUltimateIntro(){
+ paused=true; overlay.style.display="none";
+ const old=document.getElementById("ultimateCinema"); if(old)old.remove();
+ const cv=document.createElement("canvas");cv.id="ultimateCinema";
+ Object.assign(cv.style,{position:"absolute",inset:"0",width:"100%",height:"100%",zIndex:"9000",background:"#000",pointerEvents:"auto"});
+ wrap.appendChild(cv);const x=cv.getContext("2d");
+ const skip=document.createElement("button");skip.textContent="SKIP";Object.assign(skip.style,{position:"absolute",right:"18px",top:"18px",zIndex:"9001",opacity:".65",fontSize:"11px",padding:"7px 13px"});wrap.appendChild(skip);
+ let ended=false,start=performance.now(),last=0,stars=Array.from({length:150},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*.95+.05}));
+ function fit(){cv.width=Math.max(640,wrap.clientWidth*devicePixelRatio);cv.height=Math.max(360,wrap.clientHeight*devicePixelRatio)}fit();
+ function enemyShape(cx,cy,r,type,alpha=1){
+  x.save();x.translate(cx,cy);x.globalAlpha=alpha;x.rotate(performance.now()*.0007+(type*.7));
+  const cols=[['#65efff','#083348'],['#ff5a8d','#4a0923'],['#ffe067','#4b3505'],['#8bffb0','#083c25']][type%4];
+  x.shadowBlur=r*.8;x.shadowColor=cols[0];x.lineWidth=Math.max(1.5,r*.045);
+  // Faceted crystal body: layered translucent shards instead of flat polygons.
+  const pts=[[0,-r], [r*.62,-r*.18],[r*.38,r*.72],[0,r],[-r*.42,r*.62],[-r*.68,-r*.12]];
+  const g=x.createLinearGradient(-r,-r,r,r);g.addColorStop(0,cols[0]);g.addColorStop(.42,cols[1]);g.addColorStop(1,'#020713');
+  x.fillStyle=g;x.strokeStyle=cols[0];x.beginPath();pts.forEach((q,i)=>i?x.lineTo(...q):x.moveTo(...q));x.closePath();x.fill();x.stroke();
+  // Bright crystal facets.
+  x.globalAlpha=alpha*.82;x.fillStyle='#dfffff';x.beginPath();x.moveTo(0,-r*.92);x.lineTo(r*.12,-r*.08);x.lineTo(-r*.34,r*.48);x.closePath();x.fill();
+  x.globalAlpha=alpha*.62;x.fillStyle=cols[0];x.beginPath();x.moveTo(r*.12,-r*.08);x.lineTo(r*.56,-r*.16);x.lineTo(r*.34,r*.62);x.closePath();x.fill();
+  // Type-specific orbiting shards make the old enemy classes recognizable while staying crystalline.
+  const shards=type===2?4:type===3?3:2;for(let i=0;i<shards;i++){let a=performance.now()*.0015*(type%2?1:-1)+i*Math.PI*2/shards,rr=r*(1.05+(type===2?.22:.08));x.save();x.translate(Math.cos(a)*rr,Math.sin(a)*rr);x.rotate(a);x.fillStyle=cols[0];x.globalAlpha=alpha*.78;x.beginPath();x.moveTo(0,-r*.22);x.lineTo(r*.10,r*.16);x.lineTo(-r*.10,r*.16);x.closePath();x.fill();x.restore()}
+  x.restore();
+ }
+ function bossShape(cx,cy,r,p){x.save();x.translate(cx,cy);x.rotate(Math.sin(p*2)*.035);x.shadowBlur=r*.8;x.shadowColor='#d63dff';x.fillStyle='#09010f';x.strokeStyle='#ef67ff';x.lineWidth=Math.max(3,r*.035);
+  for(let k=0;k<2;k++){x.save();x.scale(k?-.96:.96,1);x.beginPath();x.moveTo(0,-r*.9);x.lineTo(r*.46,-r*.62);x.lineTo(r*.9,-r*.16);x.lineTo(r*.56,r*.05);x.lineTo(r*.98,r*.62);x.lineTo(r*.34,r*.48);x.lineTo(0,r*.9);x.closePath();x.fill();x.stroke();x.restore()}
+  let pulse=.86+.14*Math.sin(p*8),g=x.createRadialGradient(0,0,0,0,0,r*.28);g.addColorStop(0,'#fff');g.addColorStop(.18,'#ff9cff');g.addColorStop(.5,'#b500ff');g.addColorStop(1,'#35004a00');x.fillStyle=g;x.beginPath();x.arc(0,0,r*.28*pulse,0,Math.PI*2);x.fill();x.restore()}
+ function finish(){
+  if(ended)return;ended=true;cv.remove();skip.remove();running=true;paused=true;overlay.style.display="grid";
+  function battleConfirm(){
+   panel.innerHTML=`<div class="logo" style="font-size:clamp(24px,6vw,46px);color:#ef8cff">Ω APOCALYPSE ZERO</div><div class="tag">ULTIMATE FINAL BOSS</div><p style="font-size:clamp(16px,3vw,24px);font-weight:900">めっちゃ強いけど本当に戦いますか？</p><p style="color:#ffcf62;font-weight:900;font-size:13px">⚠ 注意：この戦闘では自動回復が無効になります</p><button id="fightYes">はい</button><button id="fightNo">いいえ</button>`;
+   document.getElementById("fightYes").onclick=()=>{overlay.style.display="none";paused=false;wave=25;waveActive=true;boss=null;enemies=[];bullets=[];orbs=[];lasers=[];spawnBoss();spawnLeft=0;spawnTimer=0;message("ULTIMATE FINAL BATTLE",1.4);wrap.focus()};
+   document.getElementById("fightNo").onclick=()=>{panel.innerHTML=`<div class="logo" style="font-size:clamp(24px,6vw,44px)">RETURN TO TITLE</div><p style="font-size:clamp(15px,3vw,22px);font-weight:900">タイトルに戻りますがいいですか？</p><button id="returnYes">はい</button><button id="returnNo">いいえ</button>`;document.getElementById("returnYes").onclick=showTitle;document.getElementById("returnNo").onclick=battleConfirm};
+  }
+  battleConfirm();
+ }
+ skip.onclick=finish;
+ function frame(now){if(ended)return;let t=(now-start)/1000,lastT=(now-last)/1000;last=now;let W=cv.width,H=cv.height,cx=W/2,cy=H/2;x.setTransform(1,0,0,1,0,0);x.fillStyle='#010106';x.fillRect(0,0,W,H);
+  // cinematic letterbox
+  let vign=x.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*.68);vign.addColorStop(0,'#081020');vign.addColorStop(.62,'#03040c');vign.addColorStop(1,'#000');x.fillStyle=vign;x.fillRect(0,0,W,H);
+  // 3D warp stars flying toward camera
+  let speed=t<3?.28:t<6?.62:.18;for(let s of stars){s.z-=speed*Math.min(lastT,.05);if(s.z<.025){s.z=.95;s.x=Math.random()*2-1;s.y=Math.random()*2-1}let sc=1/s.z,px=cx+s.x*W*.42*sc,py=cy+s.y*H*.42*sc,pr=Math.min(9,(1-s.z)*5+1);x.globalAlpha=Math.min(1,(1-s.z)*1.4);x.strokeStyle=s.z<.28?'#e8d7ff':'#7398bd';x.lineWidth=pr;x.beginPath();x.moveTo(px,py);x.lineTo(cx+s.x*W*.42/(s.z+speed*.08),cy+s.y*H*.42/(s.z+speed*.08));x.stroke()}x.globalAlpha=1;
+  // defeated enemies drift past camera: recognizable silhouettes from earlier waves
+  if(t>1.1&&t<5.7){for(let i=0;i<8;i++){let q=(t*0.22+i/8)%1,z=.12+q*.9,sc=1/z,side=i%2?-1:1,ex=cx+side*(W*.12+i%3*W*.055)*sc,ey=cy+((i%4)-1.5)*H*.055*sc;enemyShape(ex,ey,Math.min(H*.10,H*.018*sc),i%4,Math.min(.75,(1-q)*1.5))}}
+  // collapsing purple singularity
+  if(t>3.1){let u=Math.min(1,(t-3.1)/2.2),rr=H*(.04+u*.20),g=x.createRadialGradient(cx,cy,rr*.05,cx,cy,rr);g.addColorStop(0,'#000');g.addColorStop(.35,'#160020');g.addColorStop(.62,'#b100ff99');g.addColorStop(.8,'#54dfff55');g.addColorStop(1,'#0000');x.fillStyle=g;x.beginPath();x.arc(cx,cy,rr,0,Math.PI*2);x.fill();x.strokeStyle='#df6cff';x.lineWidth=Math.max(2,H*.004);x.globalAlpha=.45+.3*Math.sin(t*9);x.beginPath();x.ellipse(cx,cy,rr*1.35,rr*.34,t*.18,0,Math.PI*2);x.stroke();x.globalAlpha=1}
+  // boss emerges from the singularity with perspective scale
+  if(t>5.0){let u=Math.min(1,(t-5)/3.2),ease=1-Math.pow(1-u,3),r=H*(.035+ease*.27);bossShape(cx,cy+H*(.05-ease*.05),r,t);if(t>7.25){let shock=(t-7.25)*H*.7;x.strokeStyle=`rgba(239,103,255,${Math.max(0,.9-(t-7.25)*.8)})`;x.lineWidth=H*.012;x.beginPath();x.arc(cx,cy,shock,0,Math.PI*2);x.stroke()}}
+  // minimal modern typography only at reveal
+  if(t>7.55){let a=Math.min(1,(t-7.55)*2);x.globalAlpha=a;x.textAlign='center';x.fillStyle='#fff';x.font=`900 ${Math.round(H*.055)}px system-ui`;x.letterSpacing='0.12em';x.fillText('Ω  APOCALYPSE  ZERO',cx,H*.79);x.font=`700 ${Math.round(H*.018)}px system-ui`;x.fillStyle='#d9a7ff';x.fillText('ULTIMATE // FINAL ENTITY',cx,H*.835);x.globalAlpha=1}
+  // camera flash / impact
+  if(t>7.15&&t<7.38){x.fillStyle=`rgba(255,255,255,${.34*(1-(t-7.15)/.23)})`;x.fillRect(0,0,W,H)}
+  x.fillStyle='#000';x.fillRect(0,0,W,H*.055);x.fillRect(0,H*.945,W,H*.055);
+  if(t>=10.2){finish();return}requestAnimationFrame(frame)}requestAnimationFrame(frame)
+}
 function spawnBoss(){
  const stage=Math.floor(wave/5)-1,bossKind=stage%4;
  const names=["クリスタル・ガーディアン","ヴォイド・レーザー","リフト・ラム","スウォーム・コア"];
- const hp=(760+wave*105)*(1+Math.min(wave,30)*.012);
- boss={x:W/2,y:110,r:56,hp,maxHp:hp,speed:65,fire:1,type:"boss",bossKind,phase:0,reinforce:bossKind===3?2.7:4.5,dash:1.8,beam:2.5};
+ let hp=(760+wave*105)*(1+Math.min(wave,30)*.012);
+ const finalHard=selectedDifficulty==="hard"&&wave===25,finalUltimate=selectedDifficulty==="ultimate"&&wave===25;
+ if(finalHard)hp*=4.2;if(finalUltimate)hp*=8.5;
+ boss={x:W/2,y:110,r:finalUltimate?76:finalHard?66:56,hp,maxHp:hp,speed:finalUltimate?125:finalHard?95:65,fire:finalUltimate?.38:finalHard?.55:1,type:"boss",bossKind,phase:0,reinforce:finalUltimate?1.15:finalHard?1.7:(bossKind===3?2.7:4.5),dash:finalUltimate?.72:finalHard?1.05:1.8,beam:finalUltimate?1.05:finalHard?1.55:2.5,homing:finalUltimate?2:999,megaCd:finalUltimate?10:999,megaCharge:0,megaTargetX:0,megaTargetY:0,finalHard,finalUltimate};
  enemies.push(boss);bossbar.style.display="block";
- const bb=bossbar.querySelector("b");if(bb)bb.textContent=names[bossKind];
+ const bb=bossbar.querySelector("b");if(bb)bb.textContent=finalUltimate?"Ω アポカリプス・ゼロ":finalHard?"真・リフトエンペラー":names[bossKind];
 }
 function edgeSpawn(){
  let side=Math.floor(Math.random()*4),x,y;if(side===0){x=rnd(30,W-30);y=-30}else if(side===1){x=W+30;y=rnd(30,H-30)}else if(side===2){x=rnd(30,W-30);y=H+30}else{x=-30;y=rnd(30,H-30)}
@@ -580,6 +1072,7 @@ function edgeSpawn(){
  const eliteChance=waveMod?.elite??Math.min(.06+wave*.002, .14),elite=Math.random()<eliteChance;
  if(elite){hp*=2.15;rad*=1.18;spd*=1.10}
  if(waveMod?.speed)spd*=waveMod.speed;
+ if(selectedDifficulty==="hard"){hp*=1.25;spd*=1.08}else if(selectedDifficulty==="ultimate"){hp*=2.5;spd*=1.35}
  enemies.push({x,y,r:rad,hp,maxHp:hp,speed:spd,type,elite,fire:rnd(.3,1.3),phase:rnd(0,TAU),dash:rnd(.6,1.4),heal:rnd(1.5,2.5)});
 }
 function burst(x,y,color,n=12,s=180){for(let i=0;i<n;i++){let a=rnd(0,TAU),v=rnd(s*.25,s);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.25,.7),max:.7,color,size:rnd(2,5)})}}
@@ -655,14 +1148,12 @@ function killEnemy(e){
   setTimeout(()=>{if(!running)return;enemies.length=0;bullets.length=0;bossDeathPending=false;if(runStats.bosses>=5)gameClear();else victoryWave()},900);
  }
 }
-function enemyDamageScale(){return .50+Math.min(wave-1,29)*(.50/29)+Math.max(0,wave-30)*.012}
+function enemyDamageScale(){const base=.50+Math.min(wave-1,29)*(.50/29)+Math.max(0,wave-30)*.012;return base*(selectedDifficulty==="ultimate"?2.25:selectedDifficulty==="hard"?1.2:1)}
 function enemyShot(e,a,spd=250,damage=null,r=5){
  const base=damage??(e.type==="boss"?13:9);
  bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r,life:4,damage:base*enemyDamageScale(),enemy:true});
 }
 function bomb(){
- player.bombBase=0;
-
  if(player.bombCd>0)return;
  player.bombCd=player.bombBase??0;
  // 全画面ボム：画面内の敵弾をすべて消す
@@ -689,6 +1180,7 @@ function bomb(){
 function bindTitle(){
  const mp=document.getElementById("initialMetaPoints");if(mp)mp.textContent=Math.round(meta.points);
  document.querySelectorAll(".difficultyBtn").forEach(btn=>btn.addEventListener("click",()=>{
+  if(btn.disabled)return;
   selectedDifficulty=btn.dataset.difficulty||"normal";
   document.querySelectorAll(".difficultyBtn").forEach(b=>b.classList.toggle("active",b===btn));
   try{tone(440,.04,"sine",.018)}catch(_){}
@@ -702,15 +1194,19 @@ function showTitle(){
  running=false;paused=false;boss=null;waveActive=false;bossbar.style.display="none";overlay.style.display="grid";
  panel.innerHTML=`<div class="logo">匠のサンプルゲーム1</div><div class="tag">ARENA PROTOCOL · OFFLINE EDITION</div>
  <p>光るアリーナで敵の群れを撃破し、アップグレードを重ねてボスを倒せ。</p>
- <div class="metaPoint">永久強化ポイント <b>${Math.round(meta.points)}</b></div>
- <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.1 ／ NORMAL ×1 ／ HARD ×10</div>
- <button id="metaShopBtn">⚙ 永久強化ショップ</button>
  <div id="difficultySelect" aria-label="難易度選択">
   <button type="button" class="difficultyBtn ${selectedDifficulty==="easy"?"active":""}" data-difficulty="easy">EASY<br><small>初期HP 400</small></button>
   <button type="button" class="difficultyBtn ${selectedDifficulty==="normal"?"active":""}" data-difficulty="normal">NORMAL<br><small>初期HP 100</small></button>
   <button type="button" class="difficultyBtn ${selectedDifficulty==="hard"?"active":""}" data-difficulty="hard">HARD<br><small>初期HP 50</small></button>
- </div><button id="start">START MISSION</button>
- <div class="small" id="padstate">獲得POINTはゲーム終了時に永久強化ポイントとして貯まります。</div>`;
+  <button type="button" class="difficultyBtn ${selectedDifficulty==="ultimate"?"active":""}" data-difficulty="ultimate">ULTIMATE<br><small>初期HP 10 / 超高難度</small></button>
+ </div>
+ <div class="small" style="margin:5px 0 8px;color:#ffd85a;font-weight:900">※ ULTIMATEはHARDモードをクリアしてから挑戦することをおすすめします。</div>
+ 
+ <div class="titleStartRow"><button id="start">ミッションスタート</button></div>
+ <div class="metaPoint">永久強化ポイント <b>${Math.round(meta.points)}</b></div>
+ <div class="small" style="margin:4px 0 8px;color:#ffd85a">永久強化ポイント倍率　EASY ×0.5 ／ NORMAL ×1 ／ HARD ×2 ／ ULTIMATE ×4</div>
+ <div class="titleActions"><button id="metaShopBtn">⚙ 永久強化ショップ</button></div>
+ <div class="small" id="padstate">永久強化ポイントで永久強化を購入できます。</div>`;
  bindTitle();
 }
 function openMetaShop(){
@@ -727,16 +1223,9 @@ function openMetaShop(){
  });
  document.getElementById("metaBack").onclick=showTitle;
 }
-function gameClear(){
- const banked=bankRunPoints();
- running=false;paused=true;waveActive=false;bossDeathPending=false;boss=null;bullets=[];enemies=[];
- overlay.style.display="grid";
- panel.innerHTML=`<div class="logo">CLEAR RESULT</div><div class="tag">ALL 5 BOSSES DEFEATED</div>
- <h2 style="color:#9dff82;margin:14px 0 8px">ゲームクリア！</h2><p>5体のボスを撃破しました。</p>
- <div class="report"><div>撃破数 <b>${runStats.kills}</b></div><div>エリート <b>${runStats.eliteKills}</b></div><div>最大倍率 <b>×${runStats.maxMult.toFixed(1)}</b></div><div>総獲得POINT <b>${Math.round(runStats.earned)}</b></div></div>
- <p style="color:#ffd85a">獲得永久強化ポイント +${banked}（難易度倍率適用後）</p><button id="titleReturn">タイトルに戻る</button>`;
- document.getElementById("titleReturn").onclick=showTitle;
-}
+function playUltimateClearMovie(done){const L=document.getElementById("ultimateClearMovie"),C=document.getElementById("ultimateClearCanvas"),X=C.getContext("2d"),K=document.getElementById("ultimateClearCaption");L.style.display="block";let d=Math.min(2,devicePixelRatio||1),w=innerWidth,h=innerHeight;C.width=w*d;C.height=h*d;X.setTransform(d,0,0,d,0,0);const S=Array.from({length:180},()=>({x:Math.random(),y:Math.random(),z:Math.random(),s:Math.random()*2+.3})),T=performance.now();function P(px,py,r,n,a,f,st){X.beginPath();for(let i=0;i<n;i++){let q=a+i*Math.PI*2/n,xx=px+Math.cos(q)*r,yy=py+Math.sin(q)*r;i?X.lineTo(xx,yy):X.moveTo(xx,yy)}X.closePath();X.fillStyle=f;X.fill();X.strokeStyle=st;X.stroke()}function F(now){let t=(now-T)/1000,p=Math.min(1,t/10);X.clearRect(0,0,w,h);let g=X.createRadialGradient(w/2,h*.45,10,w/2,h*.45,Math.max(w,h)*.7);g.addColorStop(0,`rgba(${40+120*p},15,90,1)`);g.addColorStop(.35,"#07112b");g.addColorStop(1,"#010207");X.fillStyle=g;X.fillRect(0,0,w,h);for(const q of S){let z=(q.z+t*.09)%1;X.globalAlpha=.25+.7*z;X.fillStyle="#d9f8ff";X.fillRect(w/2+(q.x-.5)*(1+3*z)*w,h/2+(q.y-.5)*(1+3*z)*h,q.s*(1+z*2),q.s*(1+z*2))}X.globalAlpha=1;let bp=Math.max(0,Math.min(1,(t-1)/5.2));X.save();X.translate(w/2,h*.42);X.globalAlpha=1-bp;X.shadowBlur=30;X.shadowColor="#bd4cff";for(let i=0;i<8;i++){let a=i*Math.PI/4+bp*1.5;X.save();X.rotate(a);P(75,0,28,5,a,"#170d2e","#d46cff");X.restore()}X.fillStyle="#7a19d8";X.beginPath();X.arc(0,0,55*(1-bp*.25),0,Math.PI*2);X.fill();X.restore();if(t>2&&t<7){for(let i=0;i<34;i++){let a=i*.83+t*.6,r=(t-2)*35+i*5;X.globalAlpha=Math.max(0,1-(t-2)/6);P(w/2+Math.cos(a)*r,h*.42+Math.sin(a)*r*.55,5+(i%4)*2,5,a,"#7b35bb","#e99cff")}X.globalAlpha=1}if(t>5.5){let q=Math.min(1,(t-5.5)/3),yy=h*(.82-.18*q);X.fillStyle="#bffaff";X.beginPath();X.moveTo(w/2,yy-22);X.lineTo(w/2+13,yy+15);X.lineTo(w/2,yy+9);X.lineTo(w/2-13,yy+15);X.closePath();X.fill()}K.textContent=t<2?"FINAL CORE COLLAPSE":t<5.5?"":t<8.2?"THE RIFT IS CLOSING":"ULTIMATE CLEAR";if(t>9.2){X.fillStyle=`rgba(255,255,255,${Math.min(1,(t-9.2)*1.5)})`;X.fillRect(0,0,w,h)}if(t>=10){L.style.display="none";done();return}requestAnimationFrame(F)}requestAnimationFrame(F)}
+function showClearResult(isUltimate){const banked=bankRunPoints();overlay.style.display="grid";if(isUltimate)panel.innerHTML=`<div class="logo allClearRainbow">ALL CLEAR RESULT</div><div class="tag">ULTIMATE MODE COMPLETE</div><div class="staffIntro">スタッフ紹介</div><div class="staffCredits"><div><span>GAME DESIGN</span><b>匠</b></div><div><span>DIRECTOR</span><b>匠</b></div><div><span>PROGRAMMING</span><b>匠</b></div><div><span>ART / VISUAL DESIGN</span><b>匠</b></div><div><span>UI DESIGN</span><b>匠</b></div><div><span>GAME BALANCE</span><b>匠</b></div><div><span>ENEMY DESIGN</span><b>匠</b></div><div><span>BOSS DESIGN</span><b>匠</b></div><div><span>EFFECT DESIGN</span><b>匠</b></div><div><span>PRODUCER</span><b>匠</b></div></div><p style="color:#ffd85a">獲得永久強化ポイント +${banked}（難易度倍率適用後）</p><button id="titleReturn">タイトルに戻る</button>`;else panel.innerHTML=`<div class="logo">CLEAR RESULT</div><div class="tag">ALL 5 BOSSES DEFEATED</div><h2 style="color:#9dff82">ゲームクリア！</h2><p>5体のボスを撃破しました。</p><div class="report"><div>撃破数 <b>${runStats.kills}</b></div><div>エリート <b>${runStats.eliteKills}</b></div><div>最大倍率 <b>×${runStats.maxMult.toFixed(1)}</b></div><div>総獲得POINT <b>${Math.round(runStats.earned)}</b></div></div><p style="color:#ffd85a">獲得永久強化ポイント +${banked}（難易度倍率適用後）</p><button id="titleReturn">タイトルに戻る</button>`;document.getElementById("titleReturn").onclick=showTitle}
+function gameClear(){const u=selectedDifficulty==="ultimate";running=false;paused=true;waveActive=false;bossDeathPending=false;boss=null;bullets=[];enemies=[];bossbar.style.display="none";overlay.style.display="none";if(u)playUltimateClearMovie(()=>showClearResult(true));else showClearResult(false);}
 function gameOver(){
  if(player&&player.revives>0){
   player.revives--;player.hp=Math.max(1,Math.round(player.maxHp*.25));player.inv=2.5;bullets=bullets.filter(b=>!b.enemy);
@@ -772,15 +1261,15 @@ const upgradeDefs=[
  {name:"OVERCHARGE",desc:"攻撃力",apply:m=>player.damage=Math.min(80,player.damage*(1+m*.10))},
  {name:"RAPID CORE",desc:"連射速度",apply:m=>player.fireRate=Math.max(.065,player.fireRate*(1-m*.08))},
  {name:"TWIN SHOT",desc:"レーザー本数",discrete:true,apply:m=>player.shots=Math.min(10,player.shots+m)},
- {name:"NANO REPAIR",desc:"最大HP",apply:m=>{let add=Math.round(player.maxHp*.15*m);player.maxHp+=add;player.hp=Math.min(player.maxHp,player.hp+add)}},
+ {name:"NANO REPAIR",desc:"最大HP",apply:m=>{let old=player.maxHp,add=Math.round(old*.15*m);player.maxHp=Math.min(800,old+add);player.hp=Math.min(player.maxHp,player.hp+(player.maxHp-old))}},
  {name:"VECTOR DRIVE",desc:"移動速度",apply:m=>player.speed=Math.min(540,player.speed*(1+m*.04))},
  {name:"BOMB CORE",desc:"ボム再使用時間",apply:m=>player.bombBase=Math.max(3,(player.bombBase??0)*(1-m*.10))},
- {name:"REGEN",desc:"自動回復",apply:m=>player.regen+=.6*m},
+ {name:"REGEN",desc:"自動回復",apply:m=>player.regen=Math.min(8,player.regen+.6*m)},
  {name:"貫通レーザー",desc:"貫通数",discrete:true,apply:m=>player.pierce=Math.min(3,(player.pierce||0)+m)},
  {name:"爆発レーザー",desc:"爆発レベル",discrete:true,apply:m=>player.explode=Math.min(3,(player.explode||0)+m)},
  {name:"クリティカル",desc:"クリティカル率",apply:m=>player.crit=Math.min(.30,(player.crit||0)+.10*m)},
  {name:"ボムチャージ",desc:"撃破時ボム短縮",apply:m=>player.bombOnKill=Math.min(.60,(player.bombOnKill||0)+.20*m)},
- {name:"ENERGY BARRIER",desc:"敵弾を防ぎ、接触した敵へダメージ",apply:m=>{let add=Math.round(3*m);player.barrierMax+=add;player.barrier+=add;player.barrierDamage=Math.max(player.barrierDamage,16+8*m)}}
+ {name:"ENERGY BARRIER",desc:"敵弾を防ぎ、接触した敵へダメージ",apply:m=>{let old=player.barrierMax,add=Math.round(3*m);player.barrierMax=Math.min(30,old+add);player.barrier=Math.min(player.barrierMax,player.barrier+(player.barrierMax-old));player.barrierDamage=Math.min(100,Math.max(player.barrierDamage,16+8*m))}}
 ];
 const rarities=[
  {name:"コモン",mult:1,weight:59.5,color:"#a9c4d8",glow:"#7ca5c2"},
@@ -801,15 +1290,15 @@ function upgradeEffectText(u,r){
  if(u.name==="OVERCHARGE")return `攻撃力 +${Math.round(10*m)}%`;
  if(u.name==="RAPID CORE")return `連射速度 +${Math.round(8*m)}%`;
  if(u.name==="TWIN SHOT")return `レーザー +${Math.min(3,Math.ceil(m))}本（最大10本）／複数時：1本60%火力`;
- if(u.name==="NANO REPAIR")return `最大HP +${Math.round(15*m)}%`;
+ if(u.name==="NANO REPAIR")return `最大HP +${Math.round(15*m)}%（最大800）`;
  if(u.name==="VECTOR DRIVE")return `移動速度 +${Math.round(4*m)}%`;
  if(u.name==="BOMB CORE")return `ボム再使用時間 -${Math.round(10*m)}%`;
- if(u.name==="REGEN")return `自動回復 +${(.6*m).toFixed(1)}/秒`;
+ if(u.name==="REGEN")return `自動回復 +${(.6*m).toFixed(1)}/秒（最大8.0/秒）`;
  if(u.name==="貫通レーザー")return `追加貫通 +${Math.min(3,Math.ceil(m))}体`;
  if(u.name==="爆発レーザー")return `爆発レベル +${Math.min(3,Math.ceil(m))}`;
  if(u.name==="クリティカル")return `クリティカル率 +${Math.round(10*m)}%`;
  if(u.name==="ボムチャージ")return `撃破時ボム短縮 +${(.2*m).toFixed(1)}秒`;
- if(u.name==="ENERGY BARRIER")return `バリア耐久 +${Math.round(3*m)}回 / 接触ダメージ`;
+ if(u.name==="ENERGY BARRIER")return `バリア耐久 +${Math.round(3*m)}回（最大30）/ 接触ダメージ（最大100）`;
  return u.desc;
 }
 function rarityApplyMult(u,r){return u.discrete?Math.min(3,Math.ceil(r.mult)):r.mult}
@@ -826,10 +1315,13 @@ function refreshPlayerHud(){
  const ratePower=(.115-player.fireRate)/(.115-.065);
  setMeter("rateMeter","rateMeterText",ratePower*100,Math.round(ratePower*100)+"% / 最大");
  const bombPower=(5.5-player.bombBase)/(5.5-3);
- setMeter("bombMeter","bombMeterText",bombPower*100,"0.0s / TEST");
+ setMeter("bombMeter","bombMeterText",bombPower*100,(player.bombBase??5.5).toFixed(1)+"秒 / 最短3秒");
  setMeter("critMeter","critMeterText",(player.crit||0)/.30*100,Math.round((player.crit||0)*100)+"% / 30%");
- setMeter("regenMeter","regenMeterText",Math.min(100,(player.regen||0)/10*100),(player.regen||0).toFixed(1)+" HP/秒");
- setMeter("barrierMeter","barrierMeterText",player.barrierMax>0?(player.barrier/player.barrierMax*100):0,Math.ceil(player.barrier||0)+" / "+Math.ceil(player.barrierMax||0));
+ setMeter("regenMeter","regenMeterText",(player.regen||0)/8*100,(player.regen||0).toFixed(1)+" / 8.0 HP/秒");
+ setMeter("barrierMeter","barrierMeterText",(player.barrierMax||0)/30*100,Math.ceil(player.barrierMax||0)+" / 30");
+ setMeter("pierceMeter","pierceMeterText",(player.pierce||0)/3*100,(player.pierce||0)+" / 3");
+ setMeter("explodeMeter","explodeMeterText",(player.explode||0)/3*100,(player.explode||0)+" / 3");
+ setMeter("bombChargeMeter","bombChargeMeterText",(player.bombOnKill||0)/.60*100,(player.bombOnKill||0).toFixed(1)+" / 0.6秒");
  const hpPct=Math.max(0,Math.min(1,player.hp/player.maxHp));
  hpEl.style.width=(hpPct*100)+"%";
  const ht=document.getElementById("hpText");
@@ -852,26 +1344,26 @@ function openShop(){
  paused=true;overlay.style.display="grid";
  panel.innerHTML=`<div class="shopHeader"><div class="logo" style="font-size:34px">BOSS SHOP</div>
  <button id="leaveShopTop" type="button">購入終了 → 次のWAVEへ</button></div>
- <p>POINT <b id="shopPoints" class="pointNumber">${score}</b>　同じ商品も何回でも購入できます</p>
+ <p>POINT <b id="shopPoints" class="pointNumber">${score}</b>　上限に達するまで同じ商品を購入できます</p>
  <div id="cards" class="shopGrid"></div><div id="shopNote" style="min-height:24px;margin-top:8px;color:#9fe7ff"></div>
  <button id="leaveShop" style="margin-top:14px">購入終了 → 次のWAVEへ</button>`;
  const c=document.getElementById("cards"),sp=document.getElementById("shopPoints"),note=document.getElementById("shopNote");
  const items=[
-  ["ENERGY SHIELD","最大シールド +50 / シールド50回復",200,()=>{player.maxShield+=50;player.shield=Math.min(player.maxShield,player.shield+50)}],
+  ["ENERGY SHIELD","最大シールド +50 / シールド50回復（最大500）",200,()=>{let old=player.maxShield;player.maxShield=Math.min(500,old+50);player.shield=Math.min(player.maxShield,player.shield+(player.maxShield-old))}],
   ["PLASMA AMPLIFIER","攻撃力 +12%（最大80）",300,()=>{player.damage=Math.min(80,player.damage*1.12)}],
   ["OVERCLOCK DRIVE","移動速度 +5% / 連射速度 +6%（上限あり）",400,()=>{player.speed=Math.min(540,player.speed*1.05);player.fireRate=Math.max(.065,player.fireRate*.94)}],
-  ["BARRIER CELL","バリア耐久 +4回 / 接触ダメージ強化",300,()=>{player.barrierMax+=4;player.barrier+=4;player.barrierDamage=Math.max(player.barrierDamage,28)}],
+  ["BARRIER CELL","バリア耐久 +4回（最大30）/ 接触ダメージ強化",300,()=>{let old=player.barrierMax;player.barrierMax=Math.min(30,old+4);player.barrier=Math.min(player.barrierMax,player.barrier+(player.barrierMax-old));player.barrierDamage=Math.min(100,Math.max(player.barrierDamage,28))}],
   ["NOVA CAPACITOR","ボム再使用時間 -12%（最短3秒）",300,()=>{player.bombBase=Math.max(3,(player.bombBase??0)*.88);player.bombCd=Math.min(player.bombCd,player.bombBase)}],
   ["PRISM LANCE","貫通 +1 / 爆発レベル +1（各最大3）",500,()=>{player.pierce=Math.min(3,(player.pierce||0)+1);player.explode=Math.min(3,(player.explode||0)+1)}],
   ["CRITICAL MATRIX","クリティカル率 +10%（最大30%）",400,()=>{player.crit=Math.min(.30,(player.crit||0)+.10)}],
   ["TWIN ARSENAL","レーザー +1（最大10本）／2本以上は1本あたり火力60%",500,()=>{player.shots=Math.min(10,player.shots+1)}],
-  ["REGEN NANITES","自動HP回復 +0.8 / 秒",400,()=>{player.regen+=.8}],
-  ["BARRIER IMPACT","バリア接触ダメージ +12 / バリア耐久 +2回",400,()=>{player.barrierDamage=(player.barrierDamage||20)+12;player.barrierMax+=2;player.barrier+=2}]
+  ["REGEN NANITES","自動HP回復 +0.8 / 秒（最大8.0/秒）",400,()=>{player.regen=Math.min(8,player.regen+.8)}],
+  ["BARRIER IMPACT","バリア接触ダメージ +12（最大100）/ バリア耐久 +2回（最大30）",400,()=>{player.barrierDamage=Math.min(100,(player.barrierDamage||20)+12);let old=player.barrierMax;player.barrierMax=Math.min(30,old+2);player.barrier=Math.min(player.barrierMax,player.barrier+(player.barrierMax-old))}]
  ];
  const specials=[
-  ["★ STARFORGE CORE","攻撃力 +8% ＆ 最大HP +20%",700,()=>{player.damage=Math.min(80,player.damage*1.08);let add=Math.round(player.maxHp*.20);player.maxHp+=add;player.hp=Math.min(player.maxHp,player.hp+add)}],
+  ["★ STARFORGE CORE","攻撃力 +8% ＆ 最大HP +20%（攻撃80 / HP800まで）",700,()=>{player.damage=Math.min(80,player.damage*1.08);let old=player.maxHp,add=Math.round(old*.20);player.maxHp=Math.min(800,old+add);player.hp=Math.min(player.maxHp,player.hp+(player.maxHp-old))}],
   ["★ PHANTOM ARRAY","レーザー +1 ＆ クリティカル +5%／2本以上は1本あたり火力60%",700,()=>{player.shots=Math.min(10,player.shots+1);player.crit=Math.min(.30,(player.crit||0)+.05)}],
-  ["★ VOID BATTERY","シールド +100 ＆ ボム即時READY",600,()=>{player.maxShield+=100;player.shield=Math.min(player.maxShield,player.shield+100);player.bombCd=0}]
+  ["★ VOID BATTERY","シールド +100（最大500）＆ ボム即時READY",600,()=>{let old=player.maxShield;player.maxShield=Math.min(500,old+100);player.shield=Math.min(player.maxShield,player.shield+(player.maxShield-old));player.bombCd=0}]
  ];
  items.push(specials[Math.floor(Math.random()*specials.length)]);
  function shopAvailable(it){
@@ -881,21 +1373,27 @@ function openShop(){
   if(it[0]==="PRISM LANCE")return (player.pierce||0)<3||(player.explode||0)<3;
   if(it[0]==="CRITICAL MATRIX")return (player.crit||0)<.299;
   if(it[0]==="TWIN ARSENAL")return player.shots<10;
+  if(it[0]==="ENERGY SHIELD")return player.maxShield<499.9;
+  if(it[0]==="BARRIER CELL")return (player.barrierMax||0)<30||(player.barrierDamage||0)<100;
+  if(it[0]==="REGEN NANITES")return (player.regen||0)<7.999;
+  if(it[0]==="BARRIER IMPACT")return (player.barrierDamage||0)<99.9||(player.barrierMax||0)<30;
+  if(it[0]==="★ STARFORGE CORE")return player.damage<79.99||player.maxHp<799.9;
   if(it[0]==="★ PHANTOM ARRAY")return player.shots<10||(player.crit||0)<.299;
-  return true;
+  if(it[0]==="★ VOID BATTERY")return player.maxShield<499.9;
+  return false;
  }
  function refreshShop(){sp.textContent=score}
  const displayedItems=[...items].sort(()=>Math.random()-.5).slice(0,9);
 displayedItems.forEach(it=>{
   const btn=document.createElement("button");btn.className="card";
   const available=shopAvailable(it);
-  btn.innerHTML=`<b class="shopName">${it[0]}</b><span class="shopEffect">${yellowNumbers(it[1])}</span><span class="shopPrice">${available?`${yellowNumbers(it[2])} POINT　何度でも購入可`:"MAX　購入不可"}</span>`;
+  btn.innerHTML=`<b class="shopName">${it[0]}</b><span class="shopEffect">${yellowNumbers(it[1])}</span><span class="shopPrice">${available?`${yellowNumbers(it[2])} POINT　上限まで購入可`:"MAX　購入不可"}</span>`;
   if(!available){btn.disabled=true;btn.classList.add("maxed");}
   btn.onclick=()=>{
    if(!shopAvailable(it)){note.textContent=`${it[0]} は MAX です`;return}
    if(score<it[2]){note.textContent=`POINT不足：あと ${it[2]-score} P 必要です`;tone(180,.08,"square",.025);return}
    score-=it[2];it[3]();refreshPlayerHud();
-   note.textContent=shopAvailable(it)?`${it[0]} を購入。さらに同じ商品も購入できます。`:`${it[0]} は MAX になりました。`;
+   note.textContent=shopAvailable(it)?`${it[0]} を購入。上限までさらに購入できます。`:`${it[0]} は MAX になりました。`;
    if(!shopAvailable(it)){btn.disabled=true;btn.classList.add("maxed");btn.querySelector(".shopPrice").textContent="MAX　購入不可";}
    refreshShop();tone(620,.12,"triangle",.045)
   };
@@ -918,7 +1416,10 @@ function upgradeAvailable(u){
  if(u.name==="爆発レーザー")return (player.explode||0)<3;
  if(u.name==="クリティカル")return (player.crit||0)<.299;
  if(u.name==="ボムチャージ")return (player.bombOnKill||0)<.599;
- return true; // HP and regeneration have no fixed maximum.
+ if(u.name==="NANO REPAIR")return player.maxHp<799.9;
+ if(u.name==="REGEN")return (player.regen||0)<7.999;
+ if(u.name==="ENERGY BARRIER")return (player.barrierMax||0)<30||(player.barrierDamage||0)<100;
+ return false;
 }
 function chooseUpgrade(){
  document.body.classList.add("upgradeMode");
@@ -983,7 +1484,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)restoreGam
 
 
 function update(dt){
- t+=dt;player.fire=Math.max(0,player.fire-dt);player.bombCd=Math.max(0,player.bombCd-dt);player.inv=Math.max(0,player.inv-dt);if(player.regen)player.hp=Math.min(player.maxHp,player.hp+player.regen*dt);
+ t+=dt;player.fire=Math.max(0,player.fire-dt);player.bombCd=Math.max(0,player.bombCd-dt);player.inv=Math.max(0,player.inv-dt);if(player.regen && !(boss&&boss.finalUltimate))player.hp=Math.min(player.maxHp,player.hp+player.regen*dt);
  let dx=(pcMove.right?1:0)-(pcMove.left?1:0)+touchMove.x,dy=(pcMove.down?1:0)-(pcMove.up?1:0)+touchMove.y,pad=getPad();
  if(pad){
   let gx=pad.axes[0]||0,gy=pad.axes[1]||0,gm=Math.hypot(gx,gy);
@@ -1008,8 +1509,18 @@ function update(dt){
   else if(e.type==="sniper"){let dir=d>500?1:d<390?-1:0;e.x+=Math.cos(a)*e.speed*dir*dt;e.y+=Math.sin(a)*e.speed*dir*dt;e.fire-=dt;if(e.fire<=0){enemyShot(e,a,520);e.fire=rnd(1.7,2.3)*(waveMod?.fire||1)}}
   else if(e.type==="healer"){let dir=d>380?1:d<270?-1:0;e.x+=Math.cos(a)*e.speed*dir*dt;e.y+=Math.sin(a)*e.speed*dir*dt;e.heal-=dt;if(e.heal<=0){for(let ally of enemies){if(ally!==e&&ally.type!=="boss"&&Math.hypot(ally.x-e.x,ally.y-e.y)<180)ally.hp=Math.min(ally.maxHp,ally.hp+ally.maxHp*.12)}burst(e.x,e.y,"#69ff9a",12,100);e.heal=2.2}}
   else if(e.type==="boss"){
-   e.phase+=dt;
-   if(e.bossKind===0){
+    e.phase+=dt;
+    if(e.finalHard||e.finalUltimate){
+     const ultra=e.finalUltimate,rate=ultra?.84:.68,count=ultra?20:14,spd=ultra?390:310;
+     e.fire-=dt;if(e.fire<=0){for(let i=0;i<count;i++)enemyShot(e,i/count*TAU+e.phase*(ultra?1.8:1.2),spd,ultra?18:15,ultra?7:6);for(let j=-2;j<=2;j++)enemyShot(e,a+j*(ultra?.075:.10),ultra?610:500,ultra?24:18,8);e.fire=rate}
+     if(ultra){e.homing-=dt;if(e.homing<=0){let ha=Math.atan2(player.y-e.y,player.x-e.x);bullets.push({x:e.x,y:e.y,vx:Math.cos(ha)*430,vy:Math.sin(ha)*430,r:7,life:2,damage:0,enemy:true,homing:true,turn:5.8});e.homing=2;tone(145,.08,"sawtooth",.025)}}
+     if(ultra){
+      if(e.megaCharge>0){e.megaCharge-=dt;if(e.megaCharge<=0){let dx=e.megaTargetX-e.x,dy=e.megaTargetY-e.y,dl=Math.hypot(dx,dy)||1,ux=dx/dl,uy=dy/dl;let ex=e.x+ux*1800,ey=e.y+uy*1800,w=Math.min(W,H)/10;megaBeams.push({x1:e.x,y1:e.y,x2:ex,y2:ey,width:w,life:.42,max:.42});let px=player.x-e.x,py=player.y-e.y,proj=Math.max(0,Math.min(1800,px*ux+py*uy)),cx=e.x+ux*proj,cy=e.y+uy*proj;if(Math.hypot(player.x-cx,player.y-cy)<w*.5+player.r){player.hp=Math.max(1,player.hp*.20);player.inv=.65;mult=1;shake=34;flash=.45;burst(player.x,player.y,"#ff38ff",45,420);floating(player.x,player.y-44,"HP -80%","#ff82ff");refreshPlayerHud()}tone(70,.28,"sawtooth",.05);e.megaCd=10}}else{e.megaCd-=dt;if(e.megaCd<=0){e.megaTargetX=player.x;e.megaTargetY=player.y;e.megaCharge=2;tone(210,.18,"sine",.035)}}
+     }
+     e.x=W/2+Math.sin(e.phase*(ultra?1.15:.85))*(ultra?410:360);e.y=120+Math.sin(e.phase*(ultra?2.1:1.55))*(ultra?95:65);
+     if(!ultra){e.reinforce-=dt;if(e.reinforce<=0){e.reinforce=1.7;let livingAdds=enemies.filter(x=>x!==e&&x.hp>0).length,maxAdds=9;if(livingAdds<maxAdds){for(let k=0;k<Math.min(2,maxAdds-livingAdds);k++)edgeSpawn()}}}
+    }
+   else if(e.bossKind===0){
     e.x=W/2+Math.sin(e.phase*.7)*330;e.y=110+Math.sin(e.phase*1.3)*35;
     e.fire-=dt;if(e.fire<=0){for(let i=0;i<10;i++)enemyShot(e,i/10*TAU+e.phase,205+Math.min(wave,30)*3);enemyShot(e,a,380);e.fire=.95}
    }else if(e.bossKind===1){
@@ -1023,8 +1534,8 @@ function update(dt){
     e.x=W/2+Math.sin(e.phase*.8)*260;e.y=115+Math.sin(e.phase*1.4)*45;
     e.fire-=dt;if(e.fire<=0){for(let i=0;i<6;i++)enemyShot(e,i/6*TAU+e.phase,235);e.fire=1.15}
    }
-   e.reinforce-=dt;
-   if(e.reinforce<=0){
+   if(!e.finalUltimate)e.reinforce-=dt;
+   if(!e.finalUltimate&&e.reinforce<=0){
     e.reinforce=e.bossKind===3?2.3:Math.max(3.0,5.4-wave*.035);
     let livingAdds=enemies.filter(x=>x!==e&&x.hp>0).length,maxAdds=e.bossKind===3?9:5;
     if(livingAdds<maxAdds){for(let k=0;k<Math.min(e.bossKind===3?3:1,maxAdds-livingAdds);k++)edgeSpawn()}
@@ -1040,11 +1551,12 @@ function update(dt){
    }else damagePlayer((e.type==="boss"?22:e.type==="tank"?18:12)*enemyDamageScale());
   }
  }
- for(let b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(b.enemy){if(Math.hypot(b.x-player.x,b.y-player.y)<b.r+player.r+(player.barrier>0?13:0)){b.life=0;if(player.barrier>0){player.barrier=Math.max(0,player.barrier-1);refreshPlayerHud();burst(b.x,b.y,"#65eaff",10,150);floating(player.x,player.y-34,"BARRIER "+player.barrier,"#73eaff");tone(760,.06,"sine",.025)}else damagePlayer(b.damage)}}else{
+ for(let b of bullets){if(b.homing&&b.enemy&&player){let sp=Math.hypot(b.vx,b.vy)||430,cur=Math.atan2(b.vy,b.vx),tar=Math.atan2(player.y-b.y,player.x-b.x),dif=Math.atan2(Math.sin(tar-cur),Math.cos(tar-cur)),na=cur+clamp(dif,-b.turn*dt,b.turn*dt);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp}b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(b.enemy){if(Math.hypot(b.x-player.x,b.y-player.y)<b.r+player.r+(player.barrier>0?13:0)){b.life=0;if(player.barrier>0){player.barrier=Math.max(0,player.barrier-1);refreshPlayerHud();burst(b.x,b.y,"#65eaff",10,150);floating(player.x,player.y-34,"BARRIER "+player.barrier,"#73eaff");tone(760,.06,"sine",.025)}else if(b.homing){player.hp=Math.max(1,player.hp*.5);player.inv=.55;mult=1;shake=16;flash=.18;burst(player.x,player.y,"#ff35f2",24,250);floating(player.x,player.y-38,"HP HALF","#ff75f3");refreshPlayerHud()}else damagePlayer(b.damage)}}else{
   for(let e of enemies){if(e.hp>0&&Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){e.hp-=b.damage;b.life=0;burst(b.x,b.y,"#9ff",4,90);if(e.hp<=0)killEnemy(e);break}}}}
  bullets=bullets.filter(b=>b.life>0&&b.x>-80&&b.x<W+80&&b.y>-80&&b.y<H+80);enemies=enemies.filter(e=>e.hp>0);
  for(let o of orbs){let a=Math.atan2(player.y-o.y,player.x-o.x),d=dist(o,player);if(d<140){o.x+=Math.cos(a)*400*dt;o.y+=Math.sin(a)*400*dt}if(d<22){player.hp=Math.min(player.maxHp,player.hp+8);o.dead=true;floating(o.x,o.y,"+8 HP","#6ff")}}orbs=orbs.filter(o=>!o.dead);
  for(let l of lasers)l.life-=dt;lasers=lasers.filter(l=>l.life>0);
+ for(let mb of megaBeams)mb.life-=dt;megaBeams=megaBeams.filter(mb=>mb.life>0);
  for(let fx of explosionFx){fx.life-=dt;fx.r=fx.maxR*(1-fx.life/fx.max)}
  explosionFx=explosionFx.filter(fx=>fx.life>0);
  for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt}particles=particles.filter(p=>p.life>0);
@@ -1148,25 +1660,30 @@ function draw(){
    ctx.restore();
   }
  }
- for(let b of bullets){ctx.shadowBlur=14;ctx.shadowColor=b.enemy?"#ff477e":"#66eeff";ctx.fillStyle=b.enemy?"#ff6b94":"#c8ffff";ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}
+ // ULTIMATE final boss: 2-second locked warning line and fired mega laser
+ if(boss&&boss.finalUltimate&&boss.megaCharge>0){let dx=boss.megaTargetX-boss.x,dy=boss.megaTargetY-boss.y,dl=Math.hypot(dx,dy)||1,ux=dx/dl,uy=dy/dl;ctx.save();ctx.setLineDash([18,14]);ctx.lineWidth=3+2*Math.sin(performance.now()*.02);ctx.strokeStyle="#ff5cff";ctx.shadowBlur=18;ctx.shadowColor="#ff35f2";ctx.globalAlpha=.45+.25*Math.sin(performance.now()*.015);ctx.beginPath();ctx.moveTo(boss.x,boss.y);ctx.lineTo(boss.x+ux*1800,boss.y+uy*1800);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#ff9cff";ctx.beginPath();ctx.arc(boss.megaTargetX,boss.megaTargetY,10+5*Math.sin(performance.now()*.02),0,TAU);ctx.fill();ctx.restore()}
+ for(let mb of megaBeams){ctx.save();let a=Math.max(0,mb.life/mb.max);ctx.globalAlpha=Math.min(1,a*2);ctx.lineCap="round";ctx.shadowBlur=45;ctx.shadowColor="#d92cff";ctx.strokeStyle="#8d16ff";ctx.lineWidth=mb.width*1.55;ctx.beginPath();ctx.moveTo(mb.x1,mb.y1);ctx.lineTo(mb.x2,mb.y2);ctx.stroke();ctx.shadowBlur=28;ctx.strokeStyle="#ff52ff";ctx.lineWidth=mb.width;ctx.beginPath();ctx.moveTo(mb.x1,mb.y1);ctx.lineTo(mb.x2,mb.y2);ctx.stroke();ctx.shadowBlur=12;ctx.strokeStyle="#ffffff";ctx.lineWidth=mb.width*.28;ctx.beginPath();ctx.moveTo(mb.x1,mb.y1);ctx.lineTo(mb.x2,mb.y2);ctx.stroke();ctx.restore()}
+ for(let b of bullets){if(b.homing){let ang=Math.atan2(b.vy,b.vx);ctx.save();ctx.translate(b.x,b.y);ctx.rotate(ang);/* large homing missile: clearly distinct from every other projectile */ctx.shadowBlur=24;ctx.shadowColor="#ff35f2";ctx.fillStyle="#ff45ed";ctx.beginPath();ctx.moveTo(-25,-7);ctx.lineTo(-13,-12);ctx.lineTo(11,-10);ctx.quadraticCurveTo(25,0,11,10);ctx.lineTo(-13,12);ctx.lineTo(-25,7);ctx.closePath();ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2.5;ctx.stroke();/* fins */ctx.fillStyle="#8e36ff";ctx.beginPath();ctx.moveTo(-15,-9);ctx.lineTo(-27,-18);ctx.lineTo(-23,-5);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(-15,9);ctx.lineTo(-27,18);ctx.lineTo(-23,5);ctx.closePath();ctx.fill();/* engine flame */let flame=7+Math.sin(performance.now()*.035)*4;ctx.shadowBlur=18;ctx.shadowColor="#65eaff";ctx.fillStyle="#bfffff";ctx.beginPath();ctx.moveTo(-24,-5);ctx.lineTo(-24-flame,0);ctx.lineTo(-24,5);ctx.closePath();ctx.fill();/* dark missile core */ctx.shadowBlur=0;ctx.fillStyle="#16091f";ctx.beginPath();ctx.ellipse(-2,0,12,5,0,0,TAU);ctx.fill();ctx.restore()}else{ctx.shadowBlur=14;ctx.shadowColor=b.enemy?"#ff477e":"#66eeff";ctx.fillStyle=b.enemy?"#ff6b94":"#c8ffff";ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}}
  for(let e of enemies){
  ctx.save();ctx.translate(e.x,e.y);
  if(e.elite){ctx.save();ctx.globalAlpha=.75;ctx.strokeStyle="#ffd85a";ctx.shadowBlur=24;ctx.shadowColor="#ffb300";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,e.r+8+Math.sin(performance.now()*.006)*3,0,TAU);ctx.stroke();ctx.restore()}
  if(e.type==="boss"){
-  // Giant mutant zombie boss
   const tt=performance.now()*.003;
-  ctx.rotate(Math.sin(tt)*.08);
-  ctx.shadowBlur=28;ctx.shadowColor="#ff477e";
-  ctx.fillStyle="#27382b";ctx.strokeStyle="#ff7c91";ctx.lineWidth=3;
-  ctx.beginPath();ctx.ellipse(0,8,e.r*.58,e.r*.76,0,0,TAU);ctx.fill();ctx.stroke();
-  ctx.fillStyle="#8fa96f";ctx.beginPath();ctx.arc(0,-e.r*.58,e.r*.34,0,TAU);ctx.fill();ctx.stroke();
-  // arms
-  ctx.strokeStyle="#70885d";ctx.lineWidth=13;ctx.lineCap="round";
-  ctx.beginPath();ctx.moveTo(-e.r*.42,-5);ctx.lineTo(-e.r*.92,12+Math.sin(tt*3)*7);ctx.moveTo(e.r*.42,-5);ctx.lineTo(e.r*.92,12-Math.sin(tt*3)*7);ctx.stroke();
-  // face
-  ctx.shadowBlur=10;ctx.shadowColor="#ff263f";ctx.fillStyle="#ff334d";
-  ctx.beginPath();ctx.arc(-10,-e.r*.61,5,0,TAU);ctx.arc(10,-e.r*.61,5,0,TAU);ctx.fill();
-  ctx.strokeStyle="#17120f";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-11,-e.r*.45);ctx.lineTo(11,-e.r*.43);ctx.stroke();
+  if(e.finalUltimate){
+   // ULTIMATE FINAL BOSS: same silhouette/design language as the cinematic reveal.
+   const p=performance.now()*.001, pulse=1+Math.sin(p*8)*.035, rr=e.r*pulse;
+   ctx.rotate(Math.sin(p*2)*.035);ctx.shadowBlur=rr*.8;ctx.shadowColor='#d63dff';ctx.fillStyle='#09010f';ctx.strokeStyle='#ef67ff';ctx.lineWidth=Math.max(3,rr*.035);
+   // Mirrored jagged dimensional wings from the movie boss.
+   for(let k=0;k<2;k++){ctx.save();ctx.scale(k?-.96:.96,1);ctx.beginPath();ctx.moveTo(0,-rr*.9);ctx.lineTo(rr*.46,-rr*.62);ctx.lineTo(rr*.9,-rr*.16);ctx.lineTo(rr*.56,rr*.05);ctx.lineTo(rr*.98,rr*.62);ctx.lineTo(rr*.34,rr*.48);ctx.lineTo(0,rr*.9);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+   // Extra inner facets keep the combat sprite readable while preserving the movie silhouette.
+   ctx.globalAlpha=.72;ctx.fillStyle='#351047';ctx.beginPath();ctx.moveTo(0,-rr*.72);ctx.lineTo(rr*.38,-rr*.35);ctx.lineTo(rr*.22,rr*.35);ctx.lineTo(0,rr*.68);ctx.lineTo(-rr*.22,rr*.35);ctx.lineTo(-rr*.38,-rr*.35);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+   // The same bright singularity core used in the cinematic.
+   let ep=.86+.14*Math.sin(p*8),g=ctx.createRadialGradient(0,0,0,0,0,rr*.30);g.addColorStop(0,'#fff');g.addColorStop(.18,'#ff9cff');g.addColorStop(.5,'#b500ff');g.addColorStop(1,'#35004a00');ctx.fillStyle=g;ctx.shadowBlur=rr*.7;ctx.shadowColor='#d63dff';ctx.beginPath();ctx.arc(0,0,rr*.30*ep,0,TAU);ctx.fill();
+   ctx.shadowBlur=12;ctx.strokeStyle='#ffb8ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,rr*.15,0,TAU);ctx.stroke();
+  }else{
+   // Giant mutant zombie boss
+   ctx.rotate(Math.sin(tt)*.08);ctx.shadowBlur=28;ctx.shadowColor="#ff477e";ctx.fillStyle="#27382b";ctx.strokeStyle="#ff7c91";ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,8,e.r*.58,e.r*.76,0,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle="#8fa96f";ctx.beginPath();ctx.arc(0,-e.r*.58,e.r*.34,0,TAU);ctx.fill();ctx.stroke();ctx.strokeStyle="#70885d";ctx.lineWidth=13;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-e.r*.42,-5);ctx.lineTo(-e.r*.92,12+Math.sin(tt*3)*7);ctx.moveTo(e.r*.42,-5);ctx.lineTo(e.r*.92,12-Math.sin(tt*3)*7);ctx.stroke();ctx.shadowBlur=10;ctx.shadowColor="#ff263f";ctx.fillStyle="#ff334d";ctx.beginPath();ctx.arc(-10,-e.r*.61,5,0,TAU);ctx.arc(10,-e.r*.61,5,0,TAU);ctx.fill();ctx.strokeStyle="#17120f";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-11,-e.r*.45);ctx.lineTo(11,-e.r*.43);ctx.stroke();
+  }
  }else{
   // Top-down infected torso: deliberately NO visible arms or legs.
   // Movement is communicated by body bob, shadow compression and forward lean, not insect-like limbs.
@@ -1261,7 +1778,7 @@ function loop(ts){
  }
  draw();requestAnimationFrame(loop)
 }
-function togglePause(){if(!running)return;paused=!paused;if(paused){overlay.style.display="grid";panel.innerHTML='<div class="logo" style="font-size:38px">PAUSED</div><p>ゲームを一時停止しています</p><button id="resume">▶ RESUME</button>';document.getElementById("resume").onclick=togglePause}else overlay.style.display="none"}
+function togglePause(){if(!running)return;paused=!paused;if(paused){overlay.style.display="grid";panel.innerHTML='<div class="logo" style="font-size:38px">PAUSED</div><p>ゲームを一時停止しています</p><button id="resume">▶ RESUME</button><button id="pauseCashout">POINTを受け取ってタイトルへ</button>';document.getElementById("resume").onclick=togglePause;document.getElementById("pauseCashout").onclick=()=>{const got=bankRunPoints();running=false;paused=false;boss=null;waveActive=false;bossbar.style.display="none";bullets=[];enemies=[];showTitle();message("永久強化POINT +"+got,1.5)}}else overlay.style.display="none"}
 bindTitle();
 wrap.addEventListener("pointerdown",restoreGameFocus);
 document.getElementById("touchUI").addEventListener("pointerdown",restoreGameFocus);
@@ -1360,14 +1877,7 @@ function titlePadLoop(){
 requestAnimationFrame(titlePadLoop);
 
 </script>
-
-<script>
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch(err => console.error('Service Worker registration failed:', err));
-  });
-}
-</script>
+<div id="ultimateClearMovie"><canvas id="ultimateClearCanvas"></canvas><div id="ultimateClearCaption"></div></div>
 </body></html>
 <style>
 .powerMeters{grid-template-columns:repeat(3,minmax(110px,1fr))!important}
@@ -1761,7 +2271,7 @@ html.mobileUI #pauseBtn{display:flex!important;visibility:visible!important;opac
   html.mobileUI body.titleMode #panel .tag{font-size:10px!important;letter-spacing:2px!important;margin-top:3px!important}
   html.mobileUI body.titleMode #panel p{font-size:12px!important;margin:7px 0!important}
   html.mobileUI body.titleMode #difficultySelect{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;justify-content:center!important;margin:3px 0!important}
-  html.mobileUI body.titleMode #difficultySelect .difficultyBtn{width:31%!important;min-width:0!important;margin:2px!important;padding:7px 2px!important;font-size:12px!important}
+  html.mobileUI body.titleMode #difficultySelect .difficultyBtn{width:24%!important;min-width:0!important;margin:2px!important;padding:7px 2px!important;font-size:12px!important}
   html.mobileUI body.titleMode .metaPoint{margin:5px auto!important;padding:6px 10px!important;font-size:13px!important}
   html.mobileUI body.titleMode #metaShopBtn,html.mobileUI body.titleMode #start{margin:3px!important;padding:8px 10px!important;font-size:12px!important}
   html.mobileUI body.titleMode .small{font-size:10px!important;margin:3px 0!important}
@@ -2023,4 +2533,153 @@ html.mobileUI #pauseBtn{display:flex!important;visibility:visible!important;opac
 
 /* V82 — BOSS SHOP 所持POINTの数字を黄色表示 */
 #shopPoints.pointNumber{color:#ffd85a!important;font-weight:1000!important}
+/* V83 — pause cashout, NOVA 10s, HARD final boss, ULTIMATE mode */
+</style>
+
+
+<style id="v98-absolute-final-layout">
+/* Must be the literal last stylesheet in this file. */
+.powerMeters{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-template-rows:repeat(3,22px)!important;
+ gap:3px 10px!important;
+}
+.powerMeters .pbar{display:none!important}
+.powerMeters .pm{min-width:0!important;min-height:22px!important;padding:0 2px!important}
+.powerMeters .pmrow{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:3px!important;min-width:0!important}
+.powerMeters .pmrow>span:first-child{font-size:9px!important;white-space:nowrap!important}
+.powerMeters .pmrow>span:last-child{font-size:12px!important;font-weight:1000!important;color:#ffd85a!important;white-space:nowrap!important}
+
+/* desktop / half-screen Chrome */
+@media (pointer:fine){
+ #touchUI{min-height:205px!important;height:205px!important;overflow:hidden!important}
+ .powerMeters{
+   position:absolute!important;left:5%!important;right:5%!important;top:42px!important;
+   width:auto!important;height:78px!important;padding:4px 8px!important;box-sizing:border-box!important;
+ }
+ .stickZone{top:126px!important;height:75px!important}
+ #speedCtl{top:146px!important}
+ #dashBtn{top:130px!important}
+ #soundCtl{top:138px!important}
+ #pauseBtn{top:170px!important}
+}
+/* phone/tablet keeps the same 4+4+3 item layout */
+html.mobileUI .powerMeters{
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-template-rows:repeat(3,22px)!important;
+}
+#pauseBtn{
+ padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ line-height:1!important;font-size:0!important;box-sizing:border-box!important;
+}
+#pauseBtn::before{
+ content:"Ⅱ";display:block;width:100%;text-align:center;font-size:18px;font-weight:1000;line-height:1;
+}
+</style>
+
+
+<style id="v99-mobile-status-label-fix">
+html.mobileUI .powerMeters .pmrow{
+  display:flex!important;
+  align-items:center!important;
+  gap:3px!important;
+  overflow:visible!important;
+}
+html.mobileUI .powerMeters .pmrow>span:first-child{
+  flex:0 0 auto!important;
+  width:auto!important;
+  max-width:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  font-size:9px!important;
+}
+html.mobileUI .powerMeters .pmrow>span:last-child{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  white-space:nowrap!important;
+  font-size:11px!important;
+}
+</style>
+
+
+<style id="v100-mobile-long-label-fix">
+html.mobileUI .powerMeters{
+  column-gap:5px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+}
+html.mobileUI .powerMeters .pmrow{
+  gap:2px!important;
+}
+html.mobileUI .powerMeters .pmrow>span:first-child{
+  font-size:8px!important;
+  letter-spacing:-0.35px!important;
+  flex-shrink:0!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+}
+html.mobileUI .powerMeters .pmrow>span:last-child{
+  font-size:10px!important;
+  letter-spacing:-0.2px!important;
+  flex-shrink:1!important;
+  white-space:nowrap!important;
+}
+/* Extra room for ボム再使用 / クリティカル率 / ボムチャージ */
+html.mobileUI #bombMeterText,
+html.mobileUI #critMeterText,
+html.mobileUI #bombChargeMeterText{
+  font-size:9px!important;
+}
+</style>
+
+
+<style id="v101-bomb-reuse-fit">
+html.mobileUI #bombMeterText{
+  font-size:8px!important;
+  letter-spacing:-0.45px!important;
+}
+</style>
+
+
+<style id="v102-rainbow-mission-start">
+#start{
+ color:#fff!important;font-weight:1000!important;letter-spacing:.04em!important;
+ border:2px solid transparent!important;
+ background:linear-gradient(#071321,#071321) padding-box,
+ linear-gradient(90deg,#ff4d6d,#ffb84d,#fff35c,#57ff8a,#45eaff,#6b7cff,#d85cff,#ff4d9d,#ff4d6d) border-box!important;
+ background-size:100% 100%,300% 100%!important;
+ box-shadow:0 0 12px rgba(69,234,255,.45),0 0 22px rgba(216,92,255,.25)!important;
+ animation:missionRainbow 2.2s linear infinite!important;
+}
+#start:hover,#start:focus{
+ box-shadow:0 0 16px rgba(255,243,92,.65),0 0 30px rgba(69,234,255,.45)!important;
+}
+@keyframes missionRainbow{
+ 0%{background-position:0 0,0% 50%}
+ 100%{background-position:0 0,300% 50%}
+}
+</style>
+
+
+<script id="v103-ultimate-always-selectable">
+(function(){
+  function unlockUltimateButton(){
+    document.querySelectorAll('[data-difficulty="ultimate"]').forEach(function(b){
+      b.disabled=false;
+      b.removeAttribute('disabled');
+      b.setAttribute('aria-disabled','false');
+    });
+  }
+  document.addEventListener('DOMContentLoaded',unlockUltimateButton);
+  document.addEventListener('click',function(){setTimeout(unlockUltimateButton,0);},true);
+  new MutationObserver(unlockUltimateButton).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+<style id="v106-title-start-position">
+.titleStartRow{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;margin:8px 0 10px!important}
+.titleStartRow #start{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:210px!important}
 </style>
